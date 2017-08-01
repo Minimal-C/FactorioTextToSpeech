@@ -10,3 +10,7 @@ script.on_event(defines.events.on_gui_click, function(event)
 	pcall(textToSpeechGui.on_gui_click, event)
 	end)
 
+script.on_event(defines.events.on_player_created, function(event)
+    pcall(textToSpeechGui.new_player, event)
+end)
+

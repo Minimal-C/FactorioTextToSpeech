@@ -17,8 +17,16 @@ end
 
 function textToSpeechGui.mod_on_load()
 
-  textToSpeechGui.mod_init()
+    textToSpeech.init()
 
+end
+
+function textToSpeechGui.new_player(event)
+  
+  local player = game.players[event.player_index]
+  
+  textToSpeechGui.create_gui(player)
+    
 end
 
 function textToSpeechGui.on_gui_click(event)
