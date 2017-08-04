@@ -47,34 +47,22 @@ function textToSpeechGui.generate_blueprint(player)
     local root = player.gui.top.text_to_speech_gui_root
 
     -- p.print(root.action_buttons.input_field.text)
-
-    unrecognisedWords,entities = textToSpeech.convertText(root.action_buttons.input_field.text, 
-                                                          tonumber(root.settings_container.block_width_field.text),
-                                                          tonumber(root.settings_container.time_between_words_field.text))
-    -- p.print(#entities)
+    unrecognisedWords,entities = textToSpeech.convertText(root.main_frame.action_buttons.input_field.text, 
+                                                          tonumber(root.main_frame.settings_container.block_width_field.text),
+                                                          tonumber(root.main_frame.settings_container.time_between_words_field.text),
+                                                          textToSpeechGui.getCompatibleVoiceInstrumentId(root.main_frame.settings_container.voice_dropdown.caption) )
 
     -- if the old error frame is up, remove it in preparation for new sentence
-    if root.error_frame then
-      root.error_frame.destroy()
+    if root.main_frame.error_frame then
+      root.main_frame.error_frame.destroy()
     end
-
+    
     if #unrecognisedWords == 0 then
       player.cursor_stack.set_blueprint_entities(entities)
       else
-        textToSpeechGui.show_unrecognised_words(unrecognisedWords)
+        textToSpeechGui.show_unrecognised_words(unrecognisedWords, player)
     end
     
-  -- for k,v in pairs(p.cursor_stack.get_blueprint_entities()[1]) do
-  --   p.print(k,v)
-  -- end
-  -- for k,v in pairs(p.cursor_stack.get_blueprint_entities()[2]["connections"]["1"]) do
-  --   p.print(k)
-  -- end
-  -- end
-
-  -- for i, p in pairs(game.players) do
-    
-  -- end
 end
 
 function textToSpeechGui.toggle_gui(player)
@@ -111,21 +99,21 @@ function textToSpeechGui.show_unrecognised_words(unrecognisedWords, player)
   -- remove last ", " in string
   outputStr = outputStr:sub(1, -3)
 
-  -- for _, p in pairs(game.players) do
-        player.gui.top.text_to_speech_gui_root.add{type="frame",
-                                              name="error_frame",
-                                              direction="vertical"}
+  player.gui.top.text_to_speech_gui_root.main_frame.add{type="frame",
+                                        name="error_frame",
+                                        direction="vertical"}
 
-        player.gui.top.text_to_speech_gui_root.error_frame.add{type="label",
-                                                                 name="unrecognised_words_label",
-                                                                 caption="Error - Unrecognised Words",
-                                                                 style="bold_red_label_style"}
-        player.gui.top.text_to_speech_gui_root.error_frame.add{type="text-box",
-                                                                 name="unrecognised_words_textbox",
-                                                                 text=outputStr,
-                                                                 style="notice_textbox_style"}
-        player.gui.top.text_to_speech_gui_root.error_frame.unrecognised_words_textbox.read_only=true
-      -- end
+  player.gui.top.text_to_speech_gui_root.main_frame.error_frame.add{type="label",
+                                                            name="unrecognised_words_label",
+                                                            caption="Error - Unrecognised Words",
+                                                            style="bold_red_label_style"}
+  player.gui.top.text_to_speech_gui_root.main_frame.error_frame.add{type="text-box",
+                                                            name="unrecognised_words_textbox",
+                                                            text=outputStr,
+                                                            style="notice_textbox_style"}
+
+  player.gui.top.text_to_speech_gui_root.main_frame.error_frame.unrecognised_words_textbox.read_only=true
+
 end
 
 function textToSpeechGui.create_gui(player)
@@ -144,13 +132,10 @@ function textToSpeechGui.create_hidden_gui(player)
                                     direction="horizontal",
                                     style="outer_frame_style"}
 
-  local action_buttons = root.add{type="flow",
-                                  name="action_buttons",
-                                  direction="horizontal",
-                                  style="description_flow_style"}
-  action_buttons.add{type="button",
+  root.add{type="sprite-button",
                       name="toggle_gui_button",
-                      caption="Show"}
+                      sprite="text-to-speech-logo-sprite",
+                      style="icon_button_style"}
 
 end
 
@@ -158,8 +143,24 @@ function textToSpeechGui.create_main_gui(player)
 
   local root = player.gui.top.add{type="frame",
                                       name="text_to_speech_gui_root",
-                                      direction="vertical"}
-  local action_buttons = root.add{type="flow",
+                                      direction="vertical",
+                                      style="outer_frame_style"}
+
+
+  root.add{type="sprite-button",
+                      name="toggle_gui_button",
+                      sprite="text-to-speech-logo-sprite",
+                      style="icon_button_style"}
+
+  local main_frame = root.add{type="frame",
+                              name="main_frame",
+                              direction="vertical"}
+  main_frame.add{type="label",
+                 name="title_label",
+                 caption="Text To Speech",
+                 style="frame_caption_label_style"}
+
+  local action_buttons = main_frame.add{type="flow",
                                   name="action_buttons",
                                   direction="horizontal",
                                   style="description_flow_style"}
@@ -168,22 +169,28 @@ function textToSpeechGui.create_main_gui(player)
                       name="input_field",
                       text="this is some text"}
 
-  action_buttons.add{type="button",
+  action_buttons.add{type="sprite-button",
                       name="submit_button",
-                      caption="Create"}
-
-  action_buttons.add{type="button",
-                      name="toggle_gui_button",
-                      caption="Hide"}
+                      sprite="text-to-speech-submit-sprite",
+                      tooltip="Click here with an empty blueprint",
+                      style="slot_button_style"}
   
-  local settings_container = root.add{type="flow",
+  local settings_container = main_frame.add{type="table",
                                     name="settings_container",
-                                    direction="vertical",
-                                    style="description_flow_style"}
+                                    colspan=2}
+
+  settings_container.add{type="label",
+                         name="voice_label",
+                         caption="Voice"}
+
+  settings_container.add{type="drop-down",
+                         name="voice_dropdown",
+                         items= textToSpeechGui.getCompatibleVoiceList(),
+                         selected_index = 1}
 
   settings_container.add{type="label",
                      name="block_width_label",
-                     caption="Block Width"}
+                     caption="Blueprint Width"}
 
   settings_container.add{type="textfield",
                      name="block_width_field",
@@ -192,10 +199,35 @@ function textToSpeechGui.create_main_gui(player)
 
   settings_container.add{type="label",
                      name="time_between_words_label",
-                     caption="Word Pause Length (ticks)"}
+                     caption="Pause Length (ticks)"}
 
   settings_container.add{type="textfield",
                      name="time_between_words_field",
                      text="15",
                      style="number_textfield_style"}
+
+end
+
+function textToSpeechGui.getCompatibleVoiceList()
+
+-- populate list of compatible voices for dropdown menu
+  local voices = {}
+
+  for k,v in pairs(game.entity_prototypes["programmable-speaker"].instruments) do
+    if string.sub(v["name"],1,string.len("voice")) == "voice" then 
+      table.insert( voices, {"programmable-speaker-instrument." .. v["name"]})
+    end
+  end
+
+  return voices
+end
+
+function textToSpeechGui.getCompatibleVoiceInstrumentId(name)
+  for k,v in pairs(game.entity_prototypes["programmable-speaker"].instruments) do
+    if {"programmable-speaker-instrument." .. v["name"]} == name then 
+      return k
+    end
+  end
+  -- if it can't find the voice, which shouldn't happen, default to 12 (first custom instrument index)
+  return 12
 end

@@ -43,7 +43,7 @@ function textToSpeech.init()
 	timingsTable = timings.timingsTable
 end
 
-function textToSpeech.convertText(text, entityBlockLength, timeBetweenWords)
+function textToSpeech.convertText(text, entityBlockLength, timeBetweenWords, instrumentId)
 
 	-- no negative lengths
 	if entityBlockLength < 1 then
@@ -175,14 +175,14 @@ function textToSpeech.convertText(text, entityBlockLength, timeBetweenWords)
 					-- don't specify the connections for the first speaker (previous and next entities do it. Not quite sure why it needs to be specified like this but it works)
 					entity = {entity_number=entityNum,name="programmable-speaker",position={x=xPos,y=yPos}, direction=4, 
 									control_behavior={circuit_condition={first_signal={type="virtual",name=signalsList[v]},constant=1,comparator="="},
-										circuit_parameters = {signal_value_is_pitch = false, instrument_id = 12, note_id = noteIndex} },
+										circuit_parameters = {signal_value_is_pitch = false, instrument_id = instrumentId, note_id = noteIndex} },
 									parameters = {playback_volume=1.0,playback_globally=true,allow_polyphony=true},
 									alert_parameters = {show_alert = false, show_on_map = false, alert_message=""}}
 					else
 						-- specify the connections
 						entity = {entity_number=entityNum,name="programmable-speaker",position={x=xPos,y=yPos}, direction=4, 
 											control_behavior={circuit_condition={first_signal={type="virtual",name=signalsList[v]},constant=1,comparator="="},
-												circuit_parameters = {signal_value_is_pitch = false, instrument_id = 12, note_id = noteIndex} },
+												circuit_parameters = {signal_value_is_pitch = false, instrument_id = instrumentId, note_id = noteIndex} },
 											connections={["1"]={red={{entity_id=entityNum - 1}}}},
 											parameters = {playback_volume=1.0,playback_globally=true,allow_polyphony=true},
 											alert_parameters = {show_alert = false, show_on_map = false, alert_message=""}}
