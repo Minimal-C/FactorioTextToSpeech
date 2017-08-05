@@ -5,5 +5,5 @@
   "author": "Minimal",
   "description": "Text To Speech via speaker blueprints.",
   "factorio_version": "0.15",
-  "dependencies": ["programmable-speaker-phonemes"]
+  "dependencies": []
 }

@@ -42,25 +42,61 @@ function textToSpeechGui.on_gui_click(event)
 end
 
 function textToSpeechGui.generate_blueprint(player)
-  -- for _, p in pairs(game.players) do
 
     local root = player.gui.top.text_to_speech_gui_root
 
-    -- p.print(root.action_buttons.input_field.text)
-    unrecognisedWords,entities = textToSpeech.convertText(root.main_frame.action_buttons.input_field.text, 
-                                                          tonumber(root.main_frame.settings_container.block_width_field.text),
-                                                          tonumber(root.main_frame.settings_container.time_between_words_field.text),
-                                                          textToSpeechGui.getCompatibleVoiceInstrumentId(root.main_frame.settings_container.voice_dropdown.caption) )
-
-    -- if the old error frame is up, remove it in preparation for new sentence
+    local inputText = root.main_frame.action_buttons.input_field.text
+    local blockWidth = tonumber(root.main_frame.settings_container.block_width_field.text)
+    local pauseTime = tonumber(root.main_frame.settings_container.time_between_words_field.text)
+    
+    -- if the old error frame is up, remove it in preparation for new errors
     if root.main_frame.error_frame then
       root.main_frame.error_frame.destroy()
     end
+
+    -- do validation of various fields, show relevant error messages
+
+    if #inputText==0 then
+      textToSpeechGui.show_error_gui("Error - No Input Text", "", player)
+      return
+    end
+
+    -- if the earlier conversion to number failed, aka it's not a number, then show error message
+    if not blockWidth then
+      textToSpeechGui.show_error_gui("Error - Invalid Width Value", "Blueprint width must be a number", player)
+      return
+    end
+
+    -- same as above
+    if not pauseTime then
+      textToSpeechGui.show_error_gui("Error - Invalid Pause Value", "Pause time must be a number", player)
+      return
+    end
+
+    if blockWidth < 1 then
+      textToSpeechGui.show_error_gui("Error - Width Out Of Range", "Blueprint width must be greater than 0", player)
+      return
+    end
+
+    if pauseTime < 0 then
+      textToSpeechGui.show_error_gui("Error - Pause Out Of Range", "Pause time must be greater than or equal to 0", player)
+      return
+    end
+
     
-    if #unrecognisedWords == 0 then
+
+    unrecognisedPhonemes, unrecognisedWords,entities = textToSpeech.convertText(inputText, 
+                                                          blockWidth,
+                                                          pauseTime,
+                                                          textToSpeechGui.getCompatibleVoiceInstrumentId(root.main_frame.settings_container.voice_dropdown.caption) )
+
+
+    if #unrecognisedWords == 0 or #unrecognisedPhonemes == 0 then
       player.cursor_stack.set_blueprint_entities(entities)
-      else
-        textToSpeechGui.show_unrecognised_words(unrecognisedWords, player)
+      elseif unrecognisedWords > 0 then
+        textToSpeechGui.show_unrecognised_things_error("Error - Unrecognised Words",unrecognisedWords, player)
+      elseif unrecognisedPhonemes > 0 then
+        textToSpeechGui.show_unrecognised_things_error("Error - Unrecognised Phonemes",unrecognisedPhonemes, player)
     end
     
 end
@@ -85,35 +121,44 @@ function textToSpeechGui.toggle_gui(player)
   end
 end
 
-function textToSpeechGui.show_unrecognised_words(unrecognisedWords, player)
+function textToSpeechGui.show_unrecognised_things_error(title, unrecognisedThings, player)
   
-  -- put unrecognised words table into a more readable string
-  outputStr = ""
-  for _,word in ipairs(unrecognisedWords) do
+  -- put unrecognised things table into a more readable string
+  local outputStr = ""
+  local counter = 0
+  for _,word in ipairs(unrecognisedThings) do
     outputStr = outputStr .. word .. ", "
-    if outputStr:len() > 40 then
+    counter = counter + 1
+    if counter > 40 then
       outputStr = outputStr .. "\n"
+      counter = 0
     end
   end
 
   -- remove last ", " in string
   outputStr = outputStr:sub(1, -3)
 
+  textToSpeechGui.show_error_gui(title, outputStr, player)
+
+end
+
+function textToSpeechGui.show_error_gui(title, message, player)
+
   player.gui.top.text_to_speech_gui_root.main_frame.add{type="frame",
                                         name="error_frame",
                                         direction="vertical"}
 
   player.gui.top.text_to_speech_gui_root.main_frame.error_frame.add{type="label",
-                                                            name="unrecognised_words_label",
-                                                            caption="Error - Unrecognised Words",
+                                                            name="error_label",
+                                                            caption=title,
                                                             style="bold_red_label_style"}
+
   player.gui.top.text_to_speech_gui_root.main_frame.error_frame.add{type="text-box",
-                                                            name="unrecognised_words_textbox",
-                                                            text=outputStr,
+                                                            name="error_textbox",
+                                                            text=message,
                                                             style="notice_textbox_style"}
 
   player.gui.top.text_to_speech_gui_root.main_frame.error_frame.unrecognised_words_textbox.read_only=true
-
 end
 
 function textToSpeechGui.create_gui(player)
@@ -167,7 +212,7 @@ function textToSpeechGui.create_main_gui(player)
   
   action_buttons.add{type="textfield",
                       name="input_field",
-                      text="this is some text"}
+                      text=""}
 
   action_buttons.add{type="sprite-button",
                       name="submit_button",
@@ -208,11 +253,13 @@ function textToSpeechGui.create_main_gui(player)
 
 end
 
+-- return list of compatible voices for dropdown menu
 function textToSpeechGui.getCompatibleVoiceList()
 
--- populate list of compatible voices for dropdown menu
-  local voices = {}
 
+  local voices = {}
+  -- go through all instruments, if the name starts with "voice" then it's compatible,
+  -- return the localised names in a list
   for k,v in pairs(game.entity_prototypes["programmable-speaker"].instruments) do
     if string.sub(v["name"],1,string.len("voice")) == "voice" then 
       table.insert( voices, {"programmable-speaker-instrument." .. v["name"]})
@@ -222,7 +269,10 @@ function textToSpeechGui.getCompatibleVoiceList()
   return voices
 end
 
+-- return ID of voice/instrument with the specified name,
 function textToSpeechGui.getCompatibleVoiceInstrumentId(name)
+  
+  -- if you find an instrument with localised name equal to parameter name, return index
   for k,v in pairs(game.entity_prototypes["programmable-speaker"].instruments) do
     if {"programmable-speaker-instrument." .. v["name"]} == name then 
       return k

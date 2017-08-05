@@ -50,34 +50,79 @@ function textToSpeech.convertText(text, entityBlockLength, timeBetweenWords, ins
 		entityBlockLength = 1
 	end
 
-	-- strip non-word chars from text
-	text = string.gsub(text,"%W"," ")
+	-- strip non-word chars from text, except for ' and [  ]
+	text = string.gsub(text,"[^A-Za-z0-9_'%[%]]"," ")
 
 	local phonemesTable = {}
 	wordIndexes = {}
 
+	local isDoingCustomWord = false
 	phonemeCounter = 0
 	unrecognisedWords = {}
+	unrecognisedPhonemes = {}
 	-- process input text into phoneme representation
 	-- and record where words end, for pauses (see next for loop)
 	for word in string.gmatch(text, "[^%s]+") do
 		word = string.upper( word )
-		if cmuDictFileTable[word] then
+		
+		if isDoingCustomWord then
 			
+			if string.sub(word,#word,#word) == "]" then
+				isDoingCustomWord = false
+				table.insert( phonemesTable, string.sub( word, 1, #word-1 ) )
+
+				-- if phoneme is unrecognised, try to add it to error list
+				if not indexOf(phonemesList, string.sub( word, 1, #word-1 )) then
+					if not indexOf(unrecognisedPhonemes, string.sub( word, 1, #word-1 )) then
+						table.insert(unrecognisedPhonemes, string.sub( word, 1, #word-1 ))
+					end
+				end
+
+				phonemeCounter = phonemeCounter + 1
+
+				-- record end of word position
+				table.insert( wordIndexes, phonemeCounter )
+
+				else
+					table.insert( phonemesTable, word )
+					-- if phoneme is unrecognised, try to add it to error list
+					if not indexOf(phonemesList, word) then
+						if not indexOf(unrecognisedPhonemes, word) then
+							table.insert(unrecognisedPhonemes, word)
+						end
+					end
+					phonemeCounter = phonemeCounter + 1
+			end
+
+		elseif cmuDictFileTable[word] then
 			phonemesString = cmuDictFileTable[word]
 			for v in string.gmatch(phonemesString, "[^%s]+") do
 				table.insert(phonemesTable, v)
 				phonemeCounter = phonemeCounter + 1
 			end
-
-			elseif not indexOf(unrecognisedWords, word) then
-				table.insert( unrecognisedWords, word)
+			-- record end of word position
+			table.insert( wordIndexes, phonemeCounter )
+		elseif string.sub(word,1,1) == "[" then
+			isDoingCustomWord = true
+			table.insert( phonemesTable, string.sub( word, 2, #word ) )
+			-- if phoneme is unrecognised, try to add it to error list
+			if not indexOf(phonemesList, string.sub( word, 2, #word )) then
+				if not indexOf(unrecognisedPhonemes, string.sub( word, 2, #word )) then
+					table.insert(unrecognisedPhonemes, string.sub( word, 2, #word ))
+				end
+			end
+			phonemeCounter = phonemeCounter + 1
+		elseif not indexOf(unrecognisedWords, word) then
+			table.insert( unrecognisedWords, word)
 		end
-		table.insert( wordIndexes, phonemeCounter )
 	end
 
 	if #unrecognisedWords > 0 then
-		return unrecognisedWords,nil
+		return nil,unrecognisedWords,nil
+	end
+
+	if # unrecognisedPhonemes > 0 then
+		return unrecognisedPhonemes,nil,nil
 	end
 
 	entities = {}
@@ -119,7 +164,7 @@ function textToSpeech.convertText(text, entityBlockLength, timeBetweenWords, ins
 	len = #phonemesTable
 	for k,v in pairs(phonemesTable) do
 		
-		--print(k,v,indexOf(phonemesList,v),timingsTable[k])
+		print(k,v,indexOf(phonemesList,v),timingsTable[k])
 
 		if k == 1 then
 			
@@ -197,7 +242,7 @@ function textToSpeech.convertText(text, entityBlockLength, timeBetweenWords, ins
 		end
 	end
 
-	return unrecognisedWords,entities
+	return unrecognisedPhonemes, unrecognisedWords,entities
 end
 
 function textToSpeech.doEntityArrangement(x, y, goRight, xSize, ySize, entityBlockLength)
@@ -238,4 +283,6 @@ function textToSpeech.are_definitions_loaded()
 		return true
 	end
 end
+textToSpeech.init()
+textToSpeech.convertText("hello there dude",16,15,12)
 return textToSpeech
