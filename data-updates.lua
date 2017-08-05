@@ -1,0 +1,48 @@
+-- voice1
+instruments = table.insert(data.raw["programmable-speaker"]["programmable-speaker"].instruments,
+	{
+		name = "voice1",
+		notes =
+		{
+      { name = "aa",  sound = { filename = "__Text-To-Speech__/sound/voice1/aa.ogg" }},
+      { name = "ae",  sound = { filename = "__Text-To-Speech__/sound/voice1/ae.ogg" }},
+		  { name = "ah",  sound = { filename = "__Text-To-Speech__/sound/voice1/ah.ogg" }},
+		  { name = "ao",  sound = { filename = "__Text-To-Speech__/sound/voice1/ao.ogg" }},
+		  { name = "aw",  sound = { filename = "__Text-To-Speech__/sound/voice1/aw.ogg" }},
+		  { name = "ay",  sound = { filename = "__Text-To-Speech__/sound/voice1/ay.ogg" }},
+		  { name = "b",  sound = { filename = "__Text-To-Speech__/sound/voice1/b.ogg" }},
+		  { name = "ch",  sound = { filename = "__Text-To-Speech__/sound/voice1/ch.ogg" }},
+		  { name = "d",  sound = { filename = "__Text-To-Speech__/sound/voice1/d.ogg" }},
+		  { name = "dh",  sound = { filename = "__Text-To-Speech__/sound/voice1/dh.ogg" }},
+		  { name = "eh",  sound = { filename = "__Text-To-Speech__/sound/voice1/eh.ogg" }},
+		  { name = "er",  sound = { filename = "__Text-To-Speech__/sound/voice1/er.ogg" }},
+		  { name = "ey",  sound = { filename = "__Text-To-Speech__/sound/voice1/ey.ogg" }},
+		  { name = "f",  sound = { filename = "__Text-To-Speech__/sound/voice1/f.ogg" }},
+		  { name = "g",  sound = { filename = "__Text-To-Speech__/sound/voice1/g.ogg" }},
+		  { name = "hh",  sound = { filename = "__Text-To-Speech__/sound/voice1/hh.ogg" }},
+		  { name = "ih",  sound = { filename = "__Text-To-Speech__/sound/voice1/ih.ogg" }},
+		  { name = "iy",  sound = { filename = "__Text-To-Speech__/sound/voice1/iy.ogg" }},
+		  { name = "jh",  sound = { filename = "__Text-To-Speech__/sound/voice1/jh.ogg" }},
+		  { name = "k",  sound = { filename = "__Text-To-Speech__/sound/voice1/k.ogg" }},
+		  { name = "l",  sound = { filename = "__Text-To-Speech__/sound/voice1/l.ogg" }},
+		  { name = "m",  sound = { filename = "__Text-To-Speech__/sound/voice1/m.ogg" }},
+		  { name = "n",  sound = { filename = "__Text-To-Speech__/sound/voice1/n.ogg" }},
+		  { name = "ng",  sound = { filename = "__Text-To-Speech__/sound/voice1/ng.ogg" }},
+		  { name = "ow",  sound = { filename = "__Text-To-Speech__/sound/voice1/ow.ogg" }},
+		  { name = "oy",  sound = { filename = "__Text-To-Speech__/sound/voice1/oy.ogg" }},
+		  { name = "p",  sound = { filename = "__Text-To-Speech__/sound/voice1/p.ogg" }},
+		  { name = "r",  sound = { filename = "__Text-To-Speech__/sound/voice1/r.ogg" }},
+		  { name = "s",  sound = { filename = "__Text-To-Speech__/sound/voice1/s.ogg" }},
+		  { name = "sh",  sound = { filename = "__Text-To-Speech__/sound/voice1/sh.ogg" }},
+		  { name = "t",  sound = { filename = "__Text-To-Speech__/sound/voice1/t.ogg" }},
+		  { name = "th",  sound = { filename = "__Text-To-Speech__/sound/voice1/th.ogg" }},
+		  { name = "uh",  sound = { filename = "__Text-To-Speech__/sound/voice1/uh.ogg" }},
+		  { name = "uw",  sound = { filename = "__Text-To-Speech__/sound/voice1/uw.ogg" }},
+		  { name = "v",  sound = { filename = "__Text-To-Speech__/sound/voice1/v.ogg" }},
+		  { name = "w",  sound = { filename = "__Text-To-Speech__/sound/voice1/w.ogg" }},
+		  { name = "y",  sound = { filename = "__Text-To-Speech__/sound/voice1/y.ogg" }},
+		  { name = "z",  sound = { filename = "__Text-To-Speech__/sound/voice1/z.ogg" }},
+		  { name = "zh",  sound = { filename = "__Text-To-Speech__/sound/voice1/zh.ogg" }}
+    }
+	}
+)
