@@ -3,7 +3,8 @@
   "version": "0.0.1",
   "title": "Text To Speech",
   "author": "Minimal",
-  "description": "Text To Speech via speaker blueprints.",
+  "homepage":"https://github.com/Minimal-C/FactorioTextToSpeech/",
+  "description": "Text to speech via speaker blueprints, type something and have a synthesised voice say it for you. Speech synthesis via phoneme concatenation.",
   "factorio_version": "0.15",
   "dependencies": []
 }
