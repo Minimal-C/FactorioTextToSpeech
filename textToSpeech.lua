@@ -52,16 +52,21 @@ end
 
 function textToSpeech.convertText(text, entityBlockLength, timeBetweenWords, instrumentId)
 
+	-- throw error if parameters have invalid values etc
+	local parameterErrors = textToSpeech.validateParameters(text, entityBlockLength, timeBetweenWords)
+
 	-- strip non-word chars from text, except for ' and [  ]
 	local text = string.gsub(text,"[^A-Za-z0-9_'%[%]]"," ")
+	
+	local errorOutput = {}
+	local unrecognisedWords = {}
+	local unrecognisedPhonemes = {}
 
 	local phonemesTable = {}
 	local wordIndexes = {}
 
 	local isDoingCustomWord = false
 	local phonemeCounter = 0
-	local unrecognisedWords = {}
-	local unrecognisedPhonemes = {}
 
 	-- process input text into phoneme representation
 	-- and record where words end, for pauses (see next for loop)
@@ -121,11 +126,12 @@ function textToSpeech.convertText(text, entityBlockLength, timeBetweenWords, ins
 		end
 	end -- end for loop
 
-	if #unrecognisedWords > 0 then
-		return {},unrecognisedWords,{}
-	end
-	if #unrecognisedPhonemes > 0 then
-		return unrecognisedPhonemes,{},{}
+	-- throw error if unrecognised things present
+	if #unrecognisedWords > 0 or #unrecognisedPhonemes > 0 or #parameterErrors>0 then
+		table.insert(errorOutput, unrecognisedPhonemes)
+		table.insert(errorOutput, unrecognisedWords)
+		table.insert(errorOutput, parameterErrors)
+		error(errorOutput)
 	end
 
 	local entities = {}
@@ -258,8 +264,44 @@ function textToSpeech.convertText(text, entityBlockLength, timeBetweenWords, ins
 				xPos, yPos, goRight = textToSpeech.doEntityArrangement(xPos, yPos, goRight, 1, 1, entityBlockLength)
 		end
 	end
+		table.insert(errorOutput, unrecognisedPhonemes)
+		table.insert(errorOutput, unrecognisedWords)
+		table.insert(errorOutput, parameterErrors)
+	return errorOutput,entities
+end
 
-	return unrecognisedPhonemes, unrecognisedWords,entities
+function textToSpeech.validateParameters(text, entityBlockLength, timeBetweenWords)
+	
+	local errors = {}
+
+	-- if no text present
+	if #text==0 then
+		local noTextError = {"Error - No Input Text",""}
+		table.insert(errors,noTextError)
+	end
+
+	-- if the earlier conversion to number failed, aka it's not a number, then show error message
+	if not entityBlockLength then
+		local blockError = {"Error - Invalid Width Value","Blueprint width must be a number"}
+		table.insert(errors,blockError)
+		
+		-- if its a number and it's value is less than 1, show error message
+		elseif entityBlockLength < 1 then
+			local blockError = {"Error - Width Out Of Range", "Blueprint width must be greater than 0"}
+			table.insert(errors,blockError)
+	end
+
+	if not timeBetweenWords then
+		local timeError = {"Error - Invalid Pause Value", "Pause time must be a number"}
+		table.insert(errors,timeError)
+
+		-- if pause time is a number and it's value is negative, show error message
+		elseif timeBetweenWords < 0 then
+			local timeError = {"Error - Pause Out Of Range", "Pause time must be greater than or equal to 0"}
+			table.insert(errors,timeError)
+	end
+
+	return errors
 end
 
 function textToSpeech.doEntityArrangement(x, y, goRight, xSize, ySize, entityBlockLength)

@@ -49,54 +49,56 @@ function textToSpeechGui.generate_blueprint(player)
     if root.main_frame.error_frame then
       root.main_frame.error_frame.destroy()
     end
-
-    -- do validation of various fields, show relevant error messages
-
-    if #inputText==0 then
-      textToSpeechGui.show_error_gui("Error - No Input Text", "", player)
-      return
+    -- same for the success frame
+    if root.main_frame.success_frame then
+      root.main_frame.success_frame.destroy()
     end
 
-    -- if the earlier conversion to number failed, aka it's not a number, then show error message
-    if not blockWidth then
-      textToSpeechGui.show_error_gui("Error - Invalid Width Value", "Blueprint width must be a number", player)
-      return
-    end
+    local status, err, entities = pcall(textToSpeech.convertText,
+        inputText, 
+        blockWidth,
+        pauseTime,
+        textToSpeechGui.getCompatibleVoiceInstrumentId(root.main_frame.settings_container.voice_dropdown.caption) 
+      )
 
-    -- same as above
-    if not pauseTime then
-      textToSpeechGui.show_error_gui("Error - Invalid Pause Value", "Pause time must be a number", player)
-      return
-    end
-
-    if blockWidth < 1 then
-      textToSpeechGui.show_error_gui("Error - Width Out Of Range", "Blueprint width must be greater than 0", player)
-      return
-    end
-
-    if pauseTime < 0 then
-      textToSpeechGui.show_error_gui("Error - Pause Out Of Range", "Pause time must be greater than or equal to 0", player)
-      return
-    end
-
-
-    unrecognisedPhonemes, unrecognisedWords, entities = textToSpeech.convertText(
-      inputText, 
-      blockWidth,
-      pauseTime,
-      textToSpeechGui.getCompatibleVoiceInstrumentId(root.main_frame.settings_container.voice_dropdown.caption) 
-    )
-    
-    -- make the blueprint or show appropriate error
-    -- TODO: show more than one error at a time
-    if #unrecognisedWords == 0 and #unrecognisedPhonemes == 0 then
+    if (status) and (player.cursor_stack.valid_for_read) and (player.cursor_stack.name == "blueprint") then
       player.cursor_stack.set_blueprint_entities(entities)
-    end
-    if #unrecognisedWords > 0 then
-      textToSpeechGui.show_unrecognised_things_error("Error - Unrecognised Words",unrecognisedWords, player)
-    end
-    if #unrecognisedPhonemes > 0 then
-      textToSpeechGui.show_unrecognised_things_error("Error - Unrecognised Phonemes",unrecognisedPhonemes, player)
+      textToSpeechGui.show_success_gui("Success!", "The sentence has been added to your blueprint.", player)
+    else
+      -- if the player clicks the submit button with an empty cursor show error
+      if not player.cursor_stack.valid_for_read then
+        textToSpeechGui.show_error_gui("Error - Cannot Detect Blueprint", "You clicked with an empty cursor\n"..
+          "Click the button with an empty blueprint on the cursor instead.", player)
+        
+        -- if the player clicks with something that isn't a blueprint show error
+        -- done in nested if because attempt to read cursor_stack of empty cursor fails and does not return nil,
+        elseif not (player.cursor_stack.name == "blueprint") then
+          textToSpeechGui.show_error_gui("Error - Cannot Detect Blueprint", "You clicked with something that wasn't a blueprint.\n"..
+            "Click the button with an empty blueprint on the cursor instead.", player)
+      end
+      
+      local unrecognisedPhonemes = err[1]
+      local unrecognisedWords = err[2]
+      local parameterErrors = err[3]
+
+      -- if has unrecognised phonemes show error
+      if #unrecognisedPhonemes>0 then
+        textToSpeechGui.show_unrecognised_things_error("Error - Unrecognised Phonemes",unrecognisedPhonemes, player)
+      end
+      -- if has unrecognised words show error
+      if #unrecognisedWords>0 then
+        textToSpeechGui.show_unrecognised_things_error("Error - Unrecognised Words",unrecognisedWords, player)
+      end
+
+      -- if has any parameter errors show them
+      if #parameterErrors>0 then
+        for _,info in pairs(parameterErrors) do
+          local title = info[1]
+          local message = info[2]
+          textToSpeechGui.show_error_gui(title, message, player)
+        end
+      end
+      
     end
     
 end
@@ -138,29 +140,67 @@ function textToSpeechGui.show_unrecognised_things_error(title, unrecognisedThing
 end
 
 function textToSpeechGui.show_error_gui(title, message, player)
+  
+  local root = player.gui.top.text_to_speech_gui_root
 
-  player.gui.top.text_to_speech_gui_root.main_frame.add{
-    type="frame",
-    name="error_frame",
-    direction="vertical"
-  }
+  if not root.main_frame.error_frame then
+    root.main_frame.add{
+      type="frame",
+      name="error_frame",
+      direction="vertical"
+    }
+  end
 
-  player.gui.top.text_to_speech_gui_root.main_frame.error_frame.add{
+  local errNum = #root.main_frame.error_frame.children/2
+
+  root.main_frame.error_frame.add{
     type="label",
-    name="error_label",
+    name="error_label" .. errNum,
     caption=title,
     style="bold_red_label_style"
   }
 
-  player.gui.top.text_to_speech_gui_root.main_frame.error_frame.add{
+  root.main_frame.error_frame.add{
     type="text-box",
-    name="error_textbox",
+    name="error_textbox" .. errNum,
     text=message,
     style="notice_textbox_style"
   }
+  -- doesn't work inside instantiation?
+  -- get last child from error frame
+  root.main_frame.error_frame.children[#root.main_frame.error_frame.children].read_only = true
+  root.main_frame.error_frame.children[#root.main_frame.error_frame.children].selectable = false
+end
 
-  player.gui.top.text_to_speech_gui_root.main_frame.error_frame.unrecognised_words_textbox.read_only=true
+function textToSpeechGui.show_success_gui(title, message, player)
+  
+  local root = player.gui.top.text_to_speech_gui_root
 
+  if not root.main_frame.success_frame then
+    root.main_frame.add{
+      type="frame",
+      name="success_frame",
+      direction="vertical"
+    }
+  end
+
+  root.main_frame.success_frame.add{
+    type="label",
+    name="success_label",
+    caption=title,
+    style="bold_green_label_style"
+  }
+
+  root.main_frame.success_frame.add{
+    type="text-box",
+    name="success_textbox",
+    text=message,
+    style="notice_textbox_style"
+  }
+  -- doesn't work inside instantiation?
+  -- get last child from success frame
+  root.main_frame.success_frame.children[#root.main_frame.success_frame.children].read_only = true
+  root.main_frame.success_frame.children[#root.main_frame.success_frame.children].selectable = false
 end
 
 function textToSpeechGui.create_gui(player)
