@@ -1,6 +1,6 @@
 local textToSpeech = {}
 
-local serpent = require "serpent"
+-- local serpent = require "serpent"
 local cmuDict = require "cmuDict"
 local timings = require "timings"
 
@@ -46,6 +46,7 @@ end
 function textToSpeech.init()
 	-- get word phoneme definitions, and phoneme timings from respective modules, 
 	-- (factorio lua doesn't include file io so this is a workaround, though requires explicit reload on game load)
+	-- almost certainly there is a better way to do it than this (this way requires calling this every time game is loaded)
 	cmuDictFileTable = cmuDict.cmuTable
 	timingsTable = timings.timingsTable
 end
