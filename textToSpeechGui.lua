@@ -1,9 +1,8 @@
 local textToSpeech = require "textToSpeech"
--- local serpent = require "serpent"
 
 if not textToSpeechGui then textToSpeechGui = {} end
 
-local guiHidden = false
+local guiHidden = true
 
 function textToSpeechGui.mod_init()
   

@@ -43,6 +43,80 @@ local function getTimerEntities(length)
 	}
 end
 
+-- Get an integer number back as a sentence
+-- function ported from http://rosettacode.org/wiki/Number_names#Java
+-- some modifications made to make sentences more readable
+local function number_to_words(number)
+	number = tonumber(number)
+	local small = {"one", "two", "three", "four", "five", "six",
+				"seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen",
+				"fifteen", "sixteen", "seventeen", "eighteen", "nineteen"}
+	local tens = {"twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty",
+				"ninety"}
+	local big = {"thousand", "million", "billion", "trillion"}
+
+	local num = 0
+	local outP = ""
+	local unit = 0
+	local tmpLng1 = 0
+
+	if (number == 0) then
+		return "zero"
+	end
+
+	local num = math.abs( number )
+
+	while true do
+		tmpLng1 = num % 100
+		if (tmpLng1 >= 1 and tmpLng1 <= 19) then
+			outP = small[math.floor(tmpLng1)] .. " " .. outP
+		elseif (tmpLng1 >= 20 and tmpLng1 <= 99) then
+			if (math.floor(tmpLng1 % 10) == 0) then
+				outP = tens[math.floor((tmpLng1 / 10) - 1)] .. " " .. outP
+				else 
+					outP = tens[math.floor((tmpLng1 / 10) - 1)] .. " "
+						.. small[math.floor(tmpLng1 % 10) ] .. " " .. outP
+			end
+		end
+		
+		tmpLng1 = (num % 1000) / 100
+		if (math.floor(tmpLng1) ~= 0) then
+			if outP=="" then
+				outP = small[math.floor(tmpLng1)] .. " hundred "
+				elseif indexOf(big,outP) or indexOf(big,(string.match( outP,"[^%s]+")))then
+					outP = small[math.floor(tmpLng1)] .. " hundred " .. outP
+				else
+					outP = small[math.floor(tmpLng1)] .. " hundred and " .. outP
+			end
+		end
+
+		num = num/1000
+		if (num == 0) then
+			break
+		end
+
+		tmpLng1 = num % 1000
+		if (math.floor(tmpLng1) ~= 0) then
+			if outP=="" then
+				outP = big[unit + 1]
+				elseif indexOf(big, outP) then
+					outP = big[unit + 1] .. " " .. outP
+				else
+					outP = big[unit + 1] .. " and " .. outP
+			end
+		end
+		unit = unit + 1
+	end -- end while loop
+
+	if (number < 0) then
+		outP = "negative " .. outP
+	end
+
+	-- return trimmed string
+	return (outP:gsub("^%s*(.-)%s*$", "%1"))
+
+end
+
 function textToSpeech.init()
 	-- get word phoneme definitions, and phoneme timings from respective modules, 
 	-- (factorio lua doesn't include file io so this is a workaround, though requires explicit reload on game load)
@@ -57,7 +131,7 @@ function textToSpeech.convertText(text, entityBlockLength, timeBetweenWords, ins
 	local parameterErrors = textToSpeech.validateParameters(text, entityBlockLength, timeBetweenWords)
 
 	-- strip non-word chars from text, except for ' and [  ]
-	local text = string.gsub(text,"[^A-Za-z0-9_'%[%]]"," ")
+	local text = string.gsub(text,"[^A-Za-z0-9_'%[%]]%-"," ")
 	
 	local errorOutput = {}
 	local unrecognisedWords = {}
@@ -68,6 +142,11 @@ function textToSpeech.convertText(text, entityBlockLength, timeBetweenWords, ins
 
 	local isDoingCustomWord = false
 	local phonemeCounter = 0
+	
+	print(text)
+	--replace numbers with word equivalents
+	text = string.gsub( text, "%-?%d+", number_to_words)
+	print(text)
 
 	-- process input text into phoneme representation
 	-- and record where words end, for pauses (see next for loop)
@@ -342,4 +421,5 @@ function textToSpeech.are_definitions_loaded()
 		return true
 	end
 end
+
 return textToSpeech
