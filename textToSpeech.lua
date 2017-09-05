@@ -1,6 +1,5 @@
 local textToSpeech = {}
 
--- local serpent = require "serpent"
 local cmuDict = require "cmuDict"
 local timings = require "timings"
 
@@ -117,21 +116,85 @@ local function number_to_words(number)
 
 end
 
+local function validateParameters(text, entityBlockLength, timeBetweenWords)
+	
+	local errors = {}
+
+	-- if no text present
+	if #text==0 then
+		local noTextError = {"Error - No Input Text",""}
+		table.insert(errors,noTextError)
+	end
+
+	-- if the earlier conversion to number failed, aka it's not a number, then show error message
+	if not entityBlockLength then
+		local blockError = {"Error - Invalid Width Value","Blueprint width must be a number"}
+		table.insert(errors,blockError)
+		
+		-- if its a number and it's value is less than 1, show error message
+		elseif entityBlockLength < 1 then
+			local blockError = {"Error - Width Out Of Range", "Blueprint width must be greater than 0"}
+			table.insert(errors,blockError)
+	end
+
+	if not timeBetweenWords then
+		local timeError = {"Error - Invalid Pause Value", "Pause time must be a number"}
+		table.insert(errors,timeError)
+
+		-- if pause time is a number and it's value is negative, show error message
+		elseif timeBetweenWords < 0 then
+			local timeError = {"Error - Pause Out Of Range", "Pause time must be greater than or equal to 0"}
+			table.insert(errors,timeError)
+	end
+
+	return errors
+end
+
+local function doEntityArrangement(x, y, goRight, xSize, ySize, entityBlockLength)
+	
+	if goRight==nil then
+		goRight=true
+	end
+
+			
+	if goRight then
+		x = x+xSize
+	else 
+		x = x-xSize
+	end
+	
+	-- increment y onto new line if needed
+	-- change direction if needed
+	if x==-1 then
+		goRight = true
+		x = 0
+		y = y+ySize
+		elseif x==entityBlockLength then
+			goRight = false
+			x = entityBlockLength-1
+			y = y+ySize
+	end
+
+	return x,y,goRight
+
+end
+
 function textToSpeech.init()
 	-- get word phoneme definitions, and phoneme timings from respective modules, 
 	-- (factorio lua doesn't include file io so this is a workaround, though requires explicit reload on game load)
 	-- almost certainly there is a better way to do it than this (this way requires calling this every time game is loaded)
 	cmuDictFileTable = cmuDict.cmuTable
-	timingsTable = timings.timingsTable
+	-- TODO: add proper support for multiple voices
+	timingsTable = timings.voice1
 end
 
-function textToSpeech.convertText(text, entityBlockLength, timeBetweenWords, instrumentId)
+function textToSpeech.convertText(text, globalPlayback, entityBlockLength, timeBetweenWords, instrumentId)
 
 	-- throw error if parameters have invalid values etc
-	local parameterErrors = textToSpeech.validateParameters(text, entityBlockLength, timeBetweenWords)
+	local parameterErrors = validateParameters(text, entityBlockLength, timeBetweenWords)
 
-	-- strip non-word chars from text, except for ' and [  ]
-	local text = string.gsub(text,"[^A-Za-z0-9_'%[%]]%-"," ")
+	-- strip non-word chars from text, except for ' - and [  ]
+	local text = string.gsub(text,"[^A-Za-z0-9_'%[%]%-]"," ")
 	
 	local errorOutput = {}
 	local unrecognisedWords = {}
@@ -143,10 +206,8 @@ function textToSpeech.convertText(text, entityBlockLength, timeBetweenWords, ins
 	local isDoingCustomWord = false
 	local phonemeCounter = 0
 	
-	print(text)
 	--replace numbers with word equivalents
 	text = string.gsub( text, "%-?%d+", number_to_words)
-	print(text)
 
 	-- process input text into phoneme representation
 	-- and record where words end, for pauses (see next for loop)
@@ -254,8 +315,6 @@ function textToSpeech.convertText(text, entityBlockLength, timeBetweenWords, ins
 
 	for k,v in pairs(phonemesTable) do
 		
-		-- print(k,v,indexOf(phonemesList,v),timingsTable[k])
-
 		if k == 1 then
 			
 			entity = {
@@ -290,7 +349,7 @@ function textToSpeech.convertText(text, entityBlockLength, timeBetweenWords, ins
 
 		entityNum= entityNum+1
 
-		xPos, yPos, goRight = textToSpeech.doEntityArrangement(xPos, yPos, goRight, 1, 2, entityBlockLength)
+		xPos, yPos, goRight = doEntityArrangement(xPos, yPos, goRight, 1, 2, entityBlockLength)
 
 		-- increment timer
 		if indexOf(wordIndexes, k) then
@@ -319,7 +378,7 @@ function textToSpeech.convertText(text, entityBlockLength, timeBetweenWords, ins
 						entity_number=entityNum,name="programmable-speaker",position={x=xPos,y=yPos}, direction=4, 
 						control_behavior={circuit_condition={first_signal={type="virtual",name=signalsList[v]},constant=1,comparator="="},
 						circuit_parameters={signal_value_is_pitch = false, instrument_id = instrumentId, note_id = noteIndex}},
-						parameters={playback_volume=1.0,playback_globally=true,allow_polyphony=true},
+						parameters={playback_volume=1.0,playback_globally=globalPlayback,allow_polyphony=true},
 						alert_parameters = {show_alert = false, show_on_map = false, alert_message=""}
 					}
 					else
@@ -331,7 +390,7 @@ function textToSpeech.convertText(text, entityBlockLength, timeBetweenWords, ins
 							connections={
 								["1"]={red={{entity_id=entityNum - 1}}}
 							},
-							parameters = {playback_volume=1.0,playback_globally=true,allow_polyphony=true},
+							parameters = {playback_volume=1.0,playback_globally=globalPlayback,allow_polyphony=true},
 							alert_parameters = {show_alert = false, show_on_map = false, alert_message=""}
 						}
 				end
@@ -341,76 +400,13 @@ function textToSpeech.convertText(text, entityBlockLength, timeBetweenWords, ins
 				
 				entityNum= entityNum+1
 				
-				xPos, yPos, goRight = textToSpeech.doEntityArrangement(xPos, yPos, goRight, 1, 1, entityBlockLength)
+				xPos, yPos, goRight = doEntityArrangement(xPos, yPos, goRight, 1, 1, entityBlockLength)
 		end
 	end
 		table.insert(errorOutput, unrecognisedPhonemes)
 		table.insert(errorOutput, unrecognisedWords)
 		table.insert(errorOutput, parameterErrors)
 	return errorOutput,entities
-end
-
-function textToSpeech.validateParameters(text, entityBlockLength, timeBetweenWords)
-	
-	local errors = {}
-
-	-- if no text present
-	if #text==0 then
-		local noTextError = {"Error - No Input Text",""}
-		table.insert(errors,noTextError)
-	end
-
-	-- if the earlier conversion to number failed, aka it's not a number, then show error message
-	if not entityBlockLength then
-		local blockError = {"Error - Invalid Width Value","Blueprint width must be a number"}
-		table.insert(errors,blockError)
-		
-		-- if its a number and it's value is less than 1, show error message
-		elseif entityBlockLength < 1 then
-			local blockError = {"Error - Width Out Of Range", "Blueprint width must be greater than 0"}
-			table.insert(errors,blockError)
-	end
-
-	if not timeBetweenWords then
-		local timeError = {"Error - Invalid Pause Value", "Pause time must be a number"}
-		table.insert(errors,timeError)
-
-		-- if pause time is a number and it's value is negative, show error message
-		elseif timeBetweenWords < 0 then
-			local timeError = {"Error - Pause Out Of Range", "Pause time must be greater than or equal to 0"}
-			table.insert(errors,timeError)
-	end
-
-	return errors
-end
-
-function textToSpeech.doEntityArrangement(x, y, goRight, xSize, ySize, entityBlockLength)
-	
-	if goRight==nil then
-		goRight=true
-	end
-
-			
-	if goRight then
-		x = x+xSize
-	else 
-		x = x-xSize
-	end
-	
-	-- increment y onto new line if needed
-	-- change direction if needed
-	if x==-1 then
-		goRight = true
-		x = 0
-		y = y+ySize
-		elseif x==entityBlockLength then
-			goRight = false
-			x = entityBlockLength-1
-			y = y+ySize
-	end
-
-	return x,y,goRight
-
 end
 
 -- Check if the word phoneme definitions and sound timings are loaded.

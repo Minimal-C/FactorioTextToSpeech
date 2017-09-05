@@ -4,6 +4,8 @@ if not textToSpeechGui then textToSpeechGui = {} end
 
 script.on_init(textToSpeechGui.mod_init)
 
+script.on_configuration_changed(textToSpeechGui.mod_update)
+
 script.on_load(textToSpeechGui.mod_on_load)
 
 script.on_event(defines.events.on_gui_click, function(event)
