@@ -241,17 +241,24 @@ local function show_success_gui(title, message, player)
   root.main_frame.success_frame.children[#root.main_frame.success_frame.children].selectable = false
 end
 
--- return ID of voice/instrument with the specified name,
-local function getCompatibleVoiceInstrumentId(name)
+-- return ID of voice/instrument based on dropdown selection
+local function getDropDownVoiceInstrumentId(selectedIndex)
+
+  -- same as getCompatibleVoiceList()
+  -- but counts each compatible voice until it reaches the selected one.
   
-  -- if you find an instrument with localised name equal to parameter name, return index
+  local counter = 1
+  -- go through all instruments, if the name starts with "voice" (e.g. "voice1") then it's compatible,
+  -- return the *localised* names as a table
   for k,v in pairs(game.entity_prototypes["programmable-speaker"].instruments) do
-    if {"programmable-speaker-instrument." .. v["name"]} == name then 
-      return k
+    if string.sub(v["name"],1,string.len("voice")) == "voice" then 
+      if counter == selectedIndex then
+        return k - 1
+      end
+      counter = counter + 1
     end
   end
-  -- if it can't find the voice, which shouldn't happen, default to 12 (first custom instrument index)
-  return 12
+
 end
 
 local function show_unrecognised_things_error(title, unrecognisedThings, player)
@@ -299,7 +306,7 @@ local function generate_blueprint(player)
       globalPlayback,
       blockWidth,
       pauseTime,
-      getCompatibleVoiceInstrumentId(root.main_frame.settings_container.voice_dropdown.caption) 
+      getDropDownVoiceInstrumentId( root.main_frame.settings_container.voice_dropdown.selected_index ) 
     )
 
   if (status) and (player.cursor_stack.valid_for_read) and (player.cursor_stack.name == "blueprint") then
