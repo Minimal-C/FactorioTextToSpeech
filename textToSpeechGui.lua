@@ -246,7 +246,7 @@ local function getDropDownVoiceInstrumentId(selectedIndex)
 
   -- same as getCompatibleVoiceList()
   -- but counts each compatible voice until it reaches the selected one.
-  
+
   local counter = 1
   -- go through all instruments, if the name starts with "voice" (e.g. "voice1") then it's compatible,
   -- return the *localised* names as a table
@@ -290,7 +290,11 @@ local function generate_blueprint(player)
   local globalPlayback = root.main_frame.settings_container.global_playback_checkbox.state
   local blockWidth = tonumber(root.main_frame.settings_container.block_width_field.text)
   local pauseTime = tonumber(root.main_frame.settings_container.time_between_words_field.text)
+  local instrumentID = getDropDownVoiceInstrumentId( root.main_frame.settings_container.voice_dropdown.selected_index )
   
+  -- only take text after the period (e.g. programmable-speaker-instrument.voice1 -> voice1 )
+  local instrumentName = string.match(root.main_frame.settings_container.voice_dropdown.get_item(root.main_frame.settings_container.voice_dropdown.selected_index)[1], "[^.]+$")
+
   -- if the old error frame is up, remove it in preparation for new errors
   if root.main_frame.error_frame then
     root.main_frame.error_frame.destroy()
@@ -306,7 +310,8 @@ local function generate_blueprint(player)
       globalPlayback,
       blockWidth,
       pauseTime,
-      getDropDownVoiceInstrumentId( root.main_frame.settings_container.voice_dropdown.selected_index ) 
+      instrumentID,
+      instrumentName
     )
 
   if (status) and (player.cursor_stack.valid_for_read) and (player.cursor_stack.name == "blueprint") then

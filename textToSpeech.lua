@@ -185,16 +185,18 @@ function textToSpeech.init()
 	-- almost certainly there is a better way to do it than this (this way requires calling this every time game is loaded)
 	cmuDictFileTable = cmuDict.cmuTable
 	-- TODO: add proper support for multiple voices
-	timingsTable = timings.voice1
+	timingsTable = timings.timingsTable
 end
 
-function textToSpeech.convertText(text, globalPlayback, entityBlockLength, timeBetweenWords, instrumentId)
+function textToSpeech.convertText(text, globalPlayback, entityBlockLength, timeBetweenWords, instrumentId, instrumentName)
 
 	-- throw error if parameters have invalid values etc
 	local parameterErrors = validateParameters(text, entityBlockLength, timeBetweenWords)
 
 	-- strip non-word chars from text, except for ' - and [  ]
 	local text = string.gsub(text,"[^A-Za-z0-9_'%[%]%-]"," ")
+	
+	local voiceTimings = timingsTable[instrumentName]
 	
 	local errorOutput = {}
 	local unrecognisedWords = {}
@@ -291,10 +293,10 @@ function textToSpeech.convertText(text, globalPlayback, entityBlockLength, timeB
 
 		if indexOf(wordIndexes, k) then
 			-- if at end of word add phoneme length plus pause to timer
-			timeCounter = timeCounter + ((timingsTable[indexOf(phonemesList,v)]*60)/1000) + timeBetweenWords
+			timeCounter = timeCounter + ((voiceTimings[indexOf(phonemesList,v)]*60)/1000) + timeBetweenWords
 			else
 				-- otherwise just increment the timer by the length of the phoneme
-				timeCounter = timeCounter + (timingsTable[indexOf(phonemesList,v)]*60)/1000
+				timeCounter = timeCounter + (voiceTimings[indexOf(phonemesList,v)]*60)/1000
 		end
 	end -- end for loop
 
@@ -354,10 +356,10 @@ function textToSpeech.convertText(text, globalPlayback, entityBlockLength, timeB
 		-- increment timer
 		if indexOf(wordIndexes, k) then
 			-- add time for phoneme plus gap between words
-			timeCounter = timeCounter + ((timingsTable[indexOf(phonemesList,v)]*60)/1000) + timeBetweenWords
+			timeCounter = timeCounter + ((voiceTimings[indexOf(phonemesList,v)]*60)/1000) + timeBetweenWords
 			else
 				-- just add the time for phoneme
-				timeCounter = timeCounter + (timingsTable[indexOf(phonemesList,v)]*60)/1000
+				timeCounter = timeCounter + (voiceTimings[indexOf(phonemesList,v)]*60)/1000
 		end
 	end
 	
