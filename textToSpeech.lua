@@ -34,13 +34,30 @@ local timingsTable = {}
 -- @return             	The index of the value, otherwise if value not 
 --											present then return nil
 -----------------------------------------------------------------------------
-local function indexOf(table,value)
+local function index_of_value_in_table(table,value)
 	for k,v in pairs(table) do
 		if v==value then
 			return k
 		end
 	end
 	return nil
+end
+
+-----------------------------------------------------------------------------
+-- Check if value is present in table.
+--
+-- @param table					The table to search for the value in.
+-- @param value         The value to search for (string, int, etc.)
+--
+-- @return             	Boolean if present or not
+-----------------------------------------------------------------------------
+local function is_present_in_table(table, value)
+	
+	if index_of_value_in_table(table,value) then
+		return true
+		else
+			return false
+	end
 end
 
 -----------------------------------------------------------------------------
@@ -108,7 +125,7 @@ local function number_to_words(number)
 		if (math.floor(tmpLng1) ~= 0) then
 			if outP=="" then
 				outP = small[math.floor(tmpLng1)] .. " hundred "
-				elseif indexOf(big,outP) or indexOf(big,(string.match( outP,"[^%s]+")))then
+				elseif is_present_in_table(big,outP) or is_present_in_table(big,(string.match( outP,"[^%s]+")))then
 					outP = small[math.floor(tmpLng1)] .. " hundred " .. outP
 				else
 					outP = small[math.floor(tmpLng1)] .. " hundred and " .. outP
@@ -124,7 +141,7 @@ local function number_to_words(number)
 		if (math.floor(tmpLng1) ~= 0) then
 			if outP=="" then
 				outP = big[unit + 1]
-				elseif indexOf(big, outP) then
+				elseif is_present_in_table(big, outP) then
 					outP = big[unit + 1] .. " " .. outP
 				else
 					outP = big[unit + 1] .. " and " .. outP
@@ -294,8 +311,8 @@ function textToSpeech.convertText(text, globalPlayback, entityBlockLength, timeB
 				table.insert( phonemesTable, string.sub( word, 1, #word-1 ) )
 
 				-- if phoneme is unrecognised, try to add it to error list
-				if not indexOf(phonemesList, string.sub( word, 1, #word-1 )) then
-					if not indexOf(unrecognisedPhonemes, string.sub( word, 1, #word-1 )) then
+				if not is_present_in_table(phonemesList, string.sub( word, 1, #word-1 )) then
+					if not is_present_in_table(unrecognisedPhonemes, string.sub( word, 1, #word-1 )) then
 						table.insert(unrecognisedPhonemes, string.sub( word, 1, #word-1 ))
 					end
 				end
@@ -308,8 +325,8 @@ function textToSpeech.convertText(text, globalPlayback, entityBlockLength, timeB
 				else
 					table.insert( phonemesTable, word )
 					-- if phoneme is unrecognised, try to add it to error list
-					if not indexOf(phonemesList, word) then
-						if not indexOf(unrecognisedPhonemes, word) then
+					if not is_present_in_table(phonemesList, word) then
+						if not is_present_in_table(unrecognisedPhonemes, word) then
 							table.insert(unrecognisedPhonemes, word)
 						end
 					end
@@ -328,13 +345,13 @@ function textToSpeech.convertText(text, globalPlayback, entityBlockLength, timeB
 			isDoingCustomWord = true
 			table.insert( phonemesTable, string.sub( word, 2, #word ) )
 			-- if phoneme is unrecognised, try to add it to error list
-			if not indexOf(phonemesList, string.sub( word, 2, #word )) then
-				if not indexOf(unrecognisedPhonemes, string.sub( word, 2, #word )) then
+			if not is_present_in_table(phonemesList, string.sub( word, 2, #word )) then
+				if not is_present_in_table(unrecognisedPhonemes, string.sub( word, 2, #word )) then
 					table.insert(unrecognisedPhonemes, string.sub( word, 2, #word ))
 				end
 			end
 			phonemeCounter = phonemeCounter + 1
-		elseif not indexOf(unrecognisedWords, word) then
+		elseif not is_present_in_table(unrecognisedWords, word) then
 			table.insert( unrecognisedWords, word)
 		end
 	end -- end for loop
@@ -354,19 +371,19 @@ function textToSpeech.convertText(text, globalPlayback, entityBlockLength, timeB
 	-- go through each phoneme and work out total time
 	for k,v in pairs(phonemesTable) do
 	
-		local noteIndex = indexOf(phonemesList,v) - 1
+		local noteIndex = index_of_value_in_table(phonemesList,v) - 1
 
-		if indexOf(usedNotesSet,noteIndex) then
+		if is_present_in_table(usedNotesSet,noteIndex) then
 			else
 			table.insert( usedNotesSet, noteIndex)
 		end
 
-		if indexOf(wordIndexes, k) then
+		if is_present_in_table(wordIndexes, k) then
 			-- if at end of word add phoneme length plus pause to timer
-			timeCounter = timeCounter + ((voiceTimings[indexOf(phonemesList,v)]*60)/1000) + timeBetweenWords
+			timeCounter = timeCounter + ((voiceTimings[index_of_value_in_table(phonemesList,v)]*60)/1000) + timeBetweenWords
 			else
 				-- otherwise just increment the timer by the length of the phoneme
-				timeCounter = timeCounter + (voiceTimings[indexOf(phonemesList,v)]*60)/1000
+				timeCounter = timeCounter + (voiceTimings[index_of_value_in_table(phonemesList,v)]*60)/1000
 		end
 	end -- end for loop
 
@@ -424,12 +441,12 @@ function textToSpeech.convertText(text, globalPlayback, entityBlockLength, timeB
 		xPos, yPos, goRight = doEntityArrangement(xPos, yPos, goRight, 1, 2, entityBlockLength)
 
 		-- increment timer
-		if indexOf(wordIndexes, k) then
+		if is_present_in_table(wordIndexes, k) then
 			-- add time for phoneme plus gap between words
-			timeCounter = timeCounter + ((voiceTimings[indexOf(phonemesList,v)]*60)/1000) + timeBetweenWords
+			timeCounter = timeCounter + ((voiceTimings[index_of_value_in_table(phonemesList,v)]*60)/1000) + timeBetweenWords
 			else
 				-- just add the time for phoneme
-				timeCounter = timeCounter + (voiceTimings[indexOf(phonemesList,v)]*60)/1000
+				timeCounter = timeCounter + (voiceTimings[index_of_value_in_table(phonemesList,v)]*60)/1000
 		end
 	end
 	
@@ -438,10 +455,10 @@ function textToSpeech.convertText(text, globalPlayback, entityBlockLength, timeB
 	local usedNotesSet = {}
 	for k,v in pairs(phonemesTable) do
 
-		noteIndex = indexOf(phonemesList,v) - 1
+		noteIndex = index_of_value_in_table(phonemesList,v) - 1
 
 		-- if speaker for note already exists don't add speaker
-		if indexOf(usedNotesSet,noteIndex) then
+		if is_present_in_table(usedNotesSet,noteIndex) then
 			
 			else
 				if k == 1 then
