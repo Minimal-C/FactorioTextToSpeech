@@ -12,16 +12,6 @@ local timings = require "timings"
 local phonemesList = {"AA","AE","AH","AO","AW","AY","B","CH","D","DH","EH","ER","EY","F","G","HH","IH","IY","JH","K","L","M","N",
 	"NG","OW","OY","P","R","S","SH","T","TH","UH","UW","V","W","Y","Z","ZH"}
 
--- associate each phoneme with a signal value (1 signal for each phoneme, though it might make sense to spell the phoneme with signals to identify it)
-local signalsList = {
-	AA="signal-0",AE="signal-1",AH="signal-2",AO="signal-3",AW="signal-4",AY="signal-5", B="signal-6",
-	CH="signal-7", D="signal-8",DH="signal-9",EH="signal-A",ER="signal-B",EY="signal-C", F="signal-D",
-	 G="signal-E",HH="signal-F",IH="signal-G",IY="signal-H",JH="signal-I", K="signal-J", L="signal-K",
-	 M="signal-L", N="signal-M",NG="signal-N",OW="signal-O",OY="signal-P", P="signal-Q", R="signal-R",
-	 S="signal-S",SH="signal-T", T="signal-U",TH="signal-V",UH="signal-W",UW="signal-X", V="signal-Y",
-	 W="signal-Z", Y="signal-black", Z="signal-blue",ZH="signal-cyan"
-	}
-
 local cmuDictFileTable = {}
 local timingsTable = {}
 
@@ -397,48 +387,32 @@ function textToSpeech.convertText(text, globalPlayback, entityBlockLength, timeB
 
 	local entityNum = 3
 	local xPos = 0.0
-	local yPos= 3.5
+	local yPos= 3
 	timeCounter=1
 	local goRight=true
 	local len = #phonemesTable
-
+	
+	-- add speaker entities
 	for k,v in pairs(phonemesTable) do
-		
-		if k == 1 then
-			
-			entity = {
-				entity_number=entityNum,name="decider-combinator",position={x=xPos,y=yPos}, direction=4, 
-				control_behavior={decider_conditions={first_signal={type="virtual",name="signal-0"},constant=math.ceil( timeCounter ),
-				comparator="=",output_signal={type="virtual",name=signalsList[v]},copy_count_from_input=false}},
-				connections={["1"]={red={{entity_id=entityNum - 1,circuit_id=1}}}}
-			}
-			elseif k == len then
-				entity = {
-					entity_number=entityNum,name="decider-combinator",position={x=xPos,y=yPos}, direction=4, 
-					control_behavior={decider_conditions={first_signal={type="virtual",name="signal-0"},constant=math.ceil( timeCounter ),
-					comparator="=",output_signal={type="virtual",name=signalsList[v]},copy_count_from_input=false}},
-					connections={
-						["1"]={red={{entity_id=entityNum - 1,circuit_id=1}}},
-						["2"]={red={{entity_id=entityNum - 1, circuit_id=2},{entity_id=entityNum + 1}}}
-					}
-				}
-				else
-					entity = {
-						entity_number=entityNum,name="decider-combinator",position={x=xPos,y=yPos}, direction=4, 
-						control_behavior={decider_conditions={first_signal={type="virtual",name="signal-0"},constant=math.ceil( timeCounter ),
-						comparator="=",output_signal={type="virtual",name=signalsList[v]},copy_count_from_input=false}},
-						connections={
-							["1"]={red={{entity_id=entityNum - 1,circuit_id=1}}},
-							["2"]={red={{entity_id=entityNum - 1, circuit_id=2}}}
-						}
-					}
-		end
-		
+
+		noteIndex = index_of_value_in_table(phonemesList,v) - 1
+
+		entity = {
+			entity_number=entityNum,name="programmable-speaker",position={x=xPos,y=yPos}, direction=4, 
+			control_behavior={circuit_condition={first_signal={type="virtual",name="signal-0"},constant=math.ceil( timeCounter ),comparator="="},
+				circuit_parameters = {signal_value_is_pitch = false, instrument_id = instrumentId, note_id = noteIndex} },
+			connections={
+				["1"]={red={{entity_id=entityNum - 1, circuit_id=1}}}
+			},
+			parameters = {playback_volume=1.0,playback_globally=globalPlayback,allow_polyphony=true},
+			alert_parameters = {show_alert = false, show_on_map = false, alert_message=""}
+		}
+
 		table.insert(entities,entity)
-
+		
 		entityNum= entityNum+1
-
-		xPos, yPos, goRight = doEntityArrangement(xPos, yPos, goRight, 1, 2, entityBlockLength)
+		
+		xPos, yPos, goRight = doEntityArrangement(xPos, yPos, goRight, 1, 1, entityBlockLength)
 
 		-- increment timer
 		if is_present_in_table(wordIndexes, k) then
@@ -448,53 +422,12 @@ function textToSpeech.convertText(text, globalPlayback, entityBlockLength, timeB
 				-- just add the time for phoneme
 				timeCounter = timeCounter + (voiceTimings[index_of_value_in_table(phonemesList,v)]*60)/1000
 		end
-	end
-	
-	-- add speaker entities
-	-- usedNotesSet for creating only 1 speaker per phoneme/note
-	local usedNotesSet = {}
-	for k,v in pairs(phonemesTable) do
+	end -- end add speaker for loop
 
-		noteIndex = index_of_value_in_table(phonemesList,v) - 1
+	table.insert(errorOutput, unrecognisedPhonemes)
+	table.insert(errorOutput, unrecognisedWords)
+	table.insert(errorOutput, parameterErrors)
 
-		-- if speaker for note already exists don't add speaker
-		if is_present_in_table(usedNotesSet,noteIndex) then
-			
-			else
-				if k == 1 then
-					-- don't specify the connections for the first speaker (previous and next entities do it. Not quite sure why it needs to be specified like this but it works)
-					entity = {
-						entity_number=entityNum,name="programmable-speaker",position={x=xPos,y=yPos}, direction=4, 
-						control_behavior={circuit_condition={first_signal={type="virtual",name=signalsList[v]},constant=1,comparator="="},
-						circuit_parameters={signal_value_is_pitch = false, instrument_id = instrumentId, note_id = noteIndex}},
-						parameters={playback_volume=1.0,playback_globally=globalPlayback,allow_polyphony=true},
-						alert_parameters = {show_alert = false, show_on_map = false, alert_message=""}
-					}
-					else
-						-- specify the connections
-						entity = {
-							entity_number=entityNum,name="programmable-speaker",position={x=xPos,y=yPos}, direction=4, 
-							control_behavior={circuit_condition={first_signal={type="virtual",name=signalsList[v]},constant=1,comparator="="},
-								circuit_parameters = {signal_value_is_pitch = false, instrument_id = instrumentId, note_id = noteIndex} },
-							connections={
-								["1"]={red={{entity_id=entityNum - 1}}}
-							},
-							parameters = {playback_volume=1.0,playback_globally=globalPlayback,allow_polyphony=true},
-							alert_parameters = {show_alert = false, show_on_map = false, alert_message=""}
-						}
-				end
-
-				table.insert(entities,entity)
-				table.insert(usedNotesSet,noteIndex)
-				
-				entityNum= entityNum+1
-				
-				xPos, yPos, goRight = doEntityArrangement(xPos, yPos, goRight, 1, 1, entityBlockLength)
-		end
-	end
-		table.insert(errorOutput, unrecognisedPhonemes)
-		table.insert(errorOutput, unrecognisedWords)
-		table.insert(errorOutput, parameterErrors)
 	return errorOutput,entities
 end
 
