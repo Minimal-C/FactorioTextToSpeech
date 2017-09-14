@@ -200,7 +200,7 @@ end
 -- describes any errors that have occured for the player.
 --
 -- @param title       The title to use for the frame
--- @param message			The error message to show
+-- @param message     The error message to show
 -- @param player      The player who you wish to draw the gui for.
 -----------------------------------------------------------------------------
 local function show_error_gui(title, message, player)
@@ -241,7 +241,7 @@ end
 -- affirms to the player that the tts conversion was successful.
 --
 -- @param title       The title to use for the frame
--- @param message			The success message to show
+-- @param message     The success message to show
 -- @param player      The player who you wish to draw the gui for.
 -----------------------------------------------------------------------------
 local function show_success_gui(title, message, player)
@@ -280,7 +280,7 @@ end
 --
 -- @param selectedIndex       The index of the dropdown selection
 --
--- @return										The corresponding instrument ID
+-- @return                    The corresponding instrument ID
 -----------------------------------------------------------------------------
 local function getDropDownVoiceInstrumentId(selectedIndex)
 
@@ -309,7 +309,7 @@ end
 -- @param unrecognisedThings        A table containing strings of unrecognised 
 --                                  things, e.g. words, phonemes
 -- @param player                    The player who you wish to draw the gui for.
---																	table of entities.
+--                                  table of entities.
 -----------------------------------------------------------------------------
 local function show_unrecognised_things_error(title, unrecognisedThings, player)
   

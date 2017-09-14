@@ -1,8 +1,8 @@
 -----------------------------------------------------------------------------
 --  This module stores the timing information (length of each sound in ms) 
---	for each supported instrument/voice. 
---	(Factorio restricts loading external files so it's stored in this module
---	instead, there is probably a better method to accomplish this)
+--  for each supported instrument/voice. 
+--  (Factorio restricts loading external files so it's stored in this module
+--  instead, there is probably a better method to accomplish this)
 -----------------------------------------------------------------------------
 local timings = {}
 

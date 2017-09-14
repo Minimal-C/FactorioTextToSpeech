@@ -1,8 +1,8 @@
 -----------------------------------------------------------------------------
 --  This module stores the CMU dictionary information, which describes the
---	word to phoneme definitions.
---	(Factorio restricts loading external files so it's stored in this module
---	instead, there is probably a better method to accomplish this)
+--  word to phoneme definitions.
+--  (Factorio restricts loading external files so it's stored in this module
+--  instead, there is probably a better method to accomplish this)
 -----------------------------------------------------------------------------
 local cmuDict = {}
 
