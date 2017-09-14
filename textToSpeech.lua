@@ -1,3 +1,9 @@
+-----------------------------------------------------------------------------
+--  This module implements text-to-speech conversion functionality for
+--  Factorio. It uses phoneme concatenation to synthesize speech with the 
+-- 	in-game Factorio programmable-speaker-instruments using custom voices.
+-----------------------------------------------------------------------------
+
 local textToSpeech = {}
 
 local cmuDict = require "cmuDict"
@@ -19,8 +25,15 @@ local signalsList = {
 local cmuDictFileTable = {}
 local timingsTable = {}
 
--- return index of a value in a table
--- if not found return nil
+-----------------------------------------------------------------------------
+-- Finds the index of a value in a table.
+--
+-- @param table					The table to search for the value in.
+-- @param value         The value to search for (string, int, etc.)
+--
+-- @return             	The index of the value, otherwise if value not 
+--											present then return nil
+-----------------------------------------------------------------------------
 local function indexOf(table,value)
 	for k,v in pairs(table) do
 		if v==value then
@@ -30,6 +43,13 @@ local function indexOf(table,value)
 	return nil
 end
 
+-----------------------------------------------------------------------------
+-- Get the entities that make up a Factorio timer (constant combinator + decider cominator)
+--
+-- @param length				The length of the timer before it resets (ticks)
+--
+-- @return             	Returns a table containing the timer entities
+-----------------------------------------------------------------------------
 local function getTimerEntities(length)
 	return {
 		{entity_number=1, name="constant-combinator" ,position={x=0.0,y=0.0}, direction=4, 
@@ -42,9 +62,15 @@ local function getTimerEntities(length)
 	}
 end
 
--- Get an integer number back as a sentence
--- function ported from http://rosettacode.org/wiki/Number_names#Java
--- some modifications made to make sentences more readable
+-----------------------------------------------------------------------------
+-- Get an integer back as a string of words. (e.g. input:42 output:"forty two")
+-- Function ported from http://rosettacode.org/wiki/Number_names#Java ,
+-- some modifications made to make output strings more readable
+--
+-- @param number				The integer to be converted.
+--
+-- @return             	A string of words which describe the integer.
+-----------------------------------------------------------------------------
 local function number_to_words(number)
 	number = tonumber(number)
 	local small = {"one", "two", "three", "four", "five", "six",
@@ -116,6 +142,17 @@ local function number_to_words(number)
 
 end
 
+-----------------------------------------------------------------------------
+-- Checks the validity the supplied parameters, checks parameters are correct range & 
+-- type, if not valid specific errors are returned.
+--
+-- @param text											The input text string for text-to-speech conversion
+-- @param entityBlockLength         The in-game integer width of the entity blueprint
+-- @param timeBetweenWords					The pause time between words being spoken (ticks)
+--
+-- @return             							A table of errors containing specific errors if
+--																	present, if no errors then table contains nil
+-----------------------------------------------------------------------------
 local function validateParameters(text, entityBlockLength, timeBetweenWords)
 	
 	local errors = {}
@@ -150,6 +187,20 @@ local function validateParameters(text, entityBlockLength, timeBetweenWords)
 	return errors
 end
 
+-----------------------------------------------------------------------------
+-- Arranges blueprint entities in a zig-zag pattern, usually forming a rectangular
+-- block of entities in-game (depending on parameters). This method updates the x and
+-- y values for the next entity you wish to place.
+--
+-- @param x													The x position in blueprint
+-- @param y													The y position in blueprint
+-- @param goRight										Boolean describing the direction entities are being placed
+-- @param xSize											The size of the entity in the x axis (horizontal)
+-- @param ySize											The size of the entity in the y axis (vertical)
+-- @param entityBlockLength         The in-game width of the entity blueprint
+--
+-- @return													The updated values for x, y and goRight for the next entity
+-----------------------------------------------------------------------------
 local function doEntityArrangement(x, y, goRight, xSize, ySize, entityBlockLength)
 	
 	if goRight==nil then
@@ -179,18 +230,37 @@ local function doEntityArrangement(x, y, goRight, xSize, ySize, entityBlockLengt
 
 end
 
+-----------------------------------------------------------------------------
+-- Initializes the module, loading the CMU Dictionary (word to phoneme definitions),
+-- as well as loading the timing information for each voice (how long each sound lasts).
+-----------------------------------------------------------------------------
 function textToSpeech.init()
 	-- get word phoneme definitions, and phoneme timings from respective modules, 
 	-- (factorio lua doesn't include file io so this is a workaround, though requires explicit reload on game load)
 	-- almost certainly there is a better way to do it than this (this way requires calling this every time game is loaded)
 	cmuDictFileTable = cmuDict.cmuTable
-	-- TODO: add proper support for multiple voices
+	
 	timingsTable = timings.timingsTable
 end
 
+-----------------------------------------------------------------------------
+-- Convert a string of words into a table of Factorio entities which when
+-- placed in-game, plays the input text as a synthesized voice using programmable
+-- speakers sounds.
+--
+-- @param text											The input text string for text-to-speech conversion (a sentence)
+-- @param globalPlayback						Boolean for selecting if in-game speakers playback globally or locally
+-- @param entityBlockLength         The in-game width of the entity blueprint
+-- @param timeBetweenWords					The pause time between words being spoken (ticks)
+-- @param instrumentId							The in-game programmable-speaker-instrument ID to use
+-- @param instrumentName						The programmatic name (not localized name) of the instrument to use
+--
+-- @return													Returns errors encountered (table containing nil if none), and returns the
+--																	table of entities.
+-----------------------------------------------------------------------------
 function textToSpeech.convertText(text, globalPlayback, entityBlockLength, timeBetweenWords, instrumentId, instrumentName)
 
-	-- throw error if parameters have invalid values etc
+	-- get errors if parameters have invalid values etc
 	local parameterErrors = validateParameters(text, entityBlockLength, timeBetweenWords)
 
 	-- strip non-word chars from text, except for ' - and [  ]
@@ -411,7 +481,11 @@ function textToSpeech.convertText(text, globalPlayback, entityBlockLength, timeB
 	return errorOutput,entities
 end
 
--- Check if the word phoneme definitions and sound timings are loaded.
+-----------------------------------------------------------------------------
+-- Checks if the word phoneme definitions and sound timings are loaded.
+--
+-- @return				boolean value
+-----------------------------------------------------------------------------
 function textToSpeech.are_definitions_loaded()
 	if cmuDictFileTable==nil or timingsTable==nil then
 		return false

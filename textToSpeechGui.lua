@@ -2,7 +2,11 @@ local textToSpeech = require "textToSpeech"
 
 if not textToSpeechGui then textToSpeechGui = {} end
 
--- return list of compatible voices for dropdown menu
+-----------------------------------------------------------------------------
+-- Gets a list of the names of tts compatible voices.
+--
+-- @return        A table containing the localized names of compatible voices
+-----------------------------------------------------------------------------
 local function getCompatibleVoiceList()
 
   local voices = {}
@@ -18,6 +22,11 @@ local function getCompatibleVoiceList()
   return voices
 end
 
+-----------------------------------------------------------------------------
+-- Creates the main gui (expanded gui) for a player.
+--
+-- @param player        The player who you wish to draw the gui for.
+-----------------------------------------------------------------------------
 local function create_main_gui(player)
 
   local root
@@ -138,7 +147,11 @@ local function create_main_gui(player)
 
 end
 
-
+-----------------------------------------------------------------------------
+-- Creates the hidden gui (collapsed gui, only tts icon) for a player.
+--
+-- @param player        The player who you wish to draw the gui for.
+-----------------------------------------------------------------------------
 local function create_hidden_gui(player)
   
   local root
@@ -163,6 +176,11 @@ local function create_hidden_gui(player)
 
 end
 
+-----------------------------------------------------------------------------
+-- Toggles drawing either the hidden gui or the main gui.
+--
+-- @param player        The player who you wish to draw the gui for.
+-----------------------------------------------------------------------------
 local function toggle_gui(player)
   
   -- if root has exactly one child (the hide button), create main gui
@@ -177,6 +195,14 @@ local function toggle_gui(player)
   end
 end
 
+-----------------------------------------------------------------------------
+-- Show an error gui (appends a frame to the bottom of the main gui) which
+-- describes any errors that have occured for the player.
+--
+-- @param title       The title to use for the frame
+-- @param message			The error message to show
+-- @param player      The player who you wish to draw the gui for.
+-----------------------------------------------------------------------------
 local function show_error_gui(title, message, player)
   
   local root = player.gui.top.text_to_speech_gui_root
@@ -210,6 +236,14 @@ local function show_error_gui(title, message, player)
   root.main_frame.error_frame.children[#root.main_frame.error_frame.children].selectable = false
 end
 
+-----------------------------------------------------------------------------
+-- Show a success gui (appends a frame to the bottom of the main gui) which
+-- affirms to the player that the tts conversion was successful.
+--
+-- @param title       The title to use for the frame
+-- @param message			The success message to show
+-- @param player      The player who you wish to draw the gui for.
+-----------------------------------------------------------------------------
 local function show_success_gui(title, message, player)
   
   local root = player.gui.top.text_to_speech_gui_root
@@ -241,7 +275,13 @@ local function show_success_gui(title, message, player)
   root.main_frame.success_frame.children[#root.main_frame.success_frame.children].selectable = false
 end
 
--- return ID of voice/instrument based on dropdown selection
+-----------------------------------------------------------------------------
+-- Get the instrument ID of a voice/instrument based on dropdown selection index.
+--
+-- @param selectedIndex       The index of the dropdown selection
+--
+-- @return										The corresponding instrument ID
+-----------------------------------------------------------------------------
 local function getDropDownVoiceInstrumentId(selectedIndex)
 
   -- same as getCompatibleVoiceList()
@@ -261,6 +301,16 @@ local function getDropDownVoiceInstrumentId(selectedIndex)
 
 end
 
+-----------------------------------------------------------------------------
+-- Formats a list of strings into one readable string and display it in an
+-- error gui (show_error_gui).
+--
+-- @param title                     The title to use for the frame
+-- @param unrecognisedThings        A table containing strings of unrecognised 
+--                                  things, e.g. words, phonemes
+-- @param player                    The player who you wish to draw the gui for.
+--																	table of entities.
+-----------------------------------------------------------------------------
 local function show_unrecognised_things_error(title, unrecognisedThings, player)
   
   -- put unrecognised things table into a more readable string
@@ -282,6 +332,14 @@ local function show_unrecognised_things_error(title, unrecognisedThings, player)
 
 end
 
+-----------------------------------------------------------------------------
+-- Creates a Factorio blueprint, takes input from the in-game gui and uses
+-- those parameters to do the text-to-speech conversion. 
+-- The function will attempt to set the blueprint entities to the item in the
+-- player's cursor_stack, which should be a blueprint.
+--
+-- @param player        The player who made the tts request
+-----------------------------------------------------------------------------
 local function generate_blueprint(player)
 
   local root = player.gui.top.text_to_speech_gui_root
@@ -356,6 +414,10 @@ local function generate_blueprint(player)
     
 end
 
+-----------------------------------------------------------------------------
+-- Initializes the mod: initializes the textToSpeech module and draws the
+-- gui for all players.
+-----------------------------------------------------------------------------
 function textToSpeechGui.mod_init()
   
   -- load word definitions and sound timings
@@ -367,10 +429,16 @@ function textToSpeechGui.mod_init()
 
 end
 
+-----------------------------------------------------------------------------
+-- On load the mod is initialized: initializes the textToSpeech module
+-----------------------------------------------------------------------------
 function textToSpeechGui.mod_on_load()
   textToSpeech.init()
 end
 
+-----------------------------------------------------------------------------
+-- On new player joining, draw the gui for them.
+-----------------------------------------------------------------------------
 function textToSpeechGui.new_player(event)
   
   local player = game.players[event.player_index]
@@ -379,6 +447,10 @@ function textToSpeechGui.new_player(event)
     
 end
 
+-----------------------------------------------------------------------------
+-- Should the mod be updated this function will be called to redraw the gui,
+-- and reload stuff. (much here is unnecessary, but better safe than sorry?)
+-----------------------------------------------------------------------------
 function textToSpeechGui.mod_update(data)
   if data.mod_changes then
         if data.mod_changes["Text-To-Speech"] then
@@ -391,6 +463,9 @@ function textToSpeechGui.mod_update(data)
   end
 end
 
+-----------------------------------------------------------------------------
+-- When a gui clickable is clicked by a player, take the corresponding action.
+-----------------------------------------------------------------------------
 function textToSpeechGui.on_gui_click(event)
 
   if event.element.name == "submit_button" then
