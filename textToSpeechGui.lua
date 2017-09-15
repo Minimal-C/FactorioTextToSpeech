@@ -275,6 +275,38 @@ local function show_success_gui(title, message, player)
   root.main_frame.success_frame.children[#root.main_frame.success_frame.children].selectable = false
 end
 
+local function show_warning_gui(title, message, player)
+
+  local root = player.gui.top.text_to_speech_gui_root
+
+    if not root.main_frame.warning_frame then
+      root.main_frame.add{
+        type="frame",
+        name="warning_frame",
+        direction="vertical"
+      }
+    end
+
+    root.main_frame.warning_frame.add{
+      type="label",
+      name="warning_label",
+      caption=title,
+      style="menu_message_style"
+    }
+
+    root.main_frame.warning_frame.add{
+      type="text-box",
+      name="warning_textbox",
+      text=message,
+      style="notice_textbox_style"
+    }
+    -- doesn't work inside instantiation?
+    -- get last child from success frame, and do the thing
+    root.main_frame.warning_frame.children[#root.main_frame.warning_frame.children].read_only = true
+    root.main_frame.warning_frame.children[#root.main_frame.warning_frame.children].selectable = false
+
+end
+
 -----------------------------------------------------------------------------
 -- Get the instrument ID of a voice/instrument based on dropdown selection index.
 --
@@ -360,6 +392,15 @@ local function generate_blueprint(player)
   -- same for the success frame
   if root.main_frame.success_frame then
     root.main_frame.success_frame.destroy()
+  end
+  -- and the warning frame
+  if root.main_frame.warning_frame then
+    root.main_frame.warning_frame.destroy()
+  end
+
+  if instrumentName == "voiceHL1" then
+    show_warning_gui("Warning - Small Vocabulary Available", "This voice has a small vocabulary, \nit's recommended to browse the available\nwords/phonemes before using. You may\ndo this by manually viewing the\navailable sound names for this voice\non a programmable speaker.\n\nThis voice works best when Pause Length\nis set to 0.",
+      player)
   end
 
   -- attempt to convert text to speech

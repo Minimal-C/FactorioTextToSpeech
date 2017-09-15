@@ -8,12 +8,14 @@ local textToSpeech = {}
 
 local cmuDict = require "cmuDict"
 local timings = require "timings"
+local hl1Words = require "hl1Words"
 
 local phonemesList = {"AA","AE","AH","AO","AW","AY","B","CH","D","DH","EH","ER","EY","F","G","HH","IH","IY","JH","K","L","M","N",
 	"NG","OW","OY","P","R","S","SH","T","TH","UH","UW","V","W","Y","Z","ZH"}
 
 local cmuDictFileTable = {}
 local timingsTable = {}
+local hl1WordsTable = {}
 
 -----------------------------------------------------------------------------
 -- Finds the index of a value in a table.
@@ -248,6 +250,8 @@ function textToSpeech.init()
   cmuDictFileTable = cmuDict.cmuTable
 
   timingsTable = timings.timingsTable
+
+  hl1WordsTable = hl1Words.wordTable
 end
 
 -----------------------------------------------------------------------------
@@ -292,58 +296,73 @@ function textToSpeech.convertText(text, globalPlayback, entityBlockLength, timeB
   -- and record where words end, for pauses (see next for loop)
   -- TODO: improve readability, logic flow too complex
   for word in string.gmatch(text, "[^%s]+") do
-    word = string.upper( word )
     
-    if isDoingCustomWord then
-      
-      if string.sub(word,#word,#word) == "]" then
-        isDoingCustomWord = false
-        table.insert( phonemesTable, string.sub( word, 1, #word-1 ) )
-
-        -- if phoneme is unrecognised, try to add it to error list
-        if not is_present_in_table(phonemesList, string.sub( word, 1, #word-1 )) then
-          if not is_present_in_table(unrecognisedPhonemes, string.sub( word, 1, #word-1 )) then
-            table.insert(unrecognisedPhonemes, string.sub( word, 1, #word-1 ))
-          end
-        end
-
+    if instrumentName == "voiceHL1" then
+      word = string.lower( word )
+      -- I'm reusing the phonemes table to hold actual words here
+      if is_present_in_table(hl1WordsTable, word) then
+        table.insert(phonemesTable, word)
+        table.insert(wordIndexes, phonemeCounter)
         phonemeCounter = phonemeCounter + 1
-
-        -- record end of word position
-        table.insert( wordIndexes, phonemeCounter )
-
         else
-          table.insert( phonemesTable, word )
+        table.insert( unrecognisedWords, word )
+      end
+
+      else
+
+        word = string.upper( word )
+        
+        if isDoingCustomWord then
+          
+          if string.sub(word,#word,#word) == "]" then
+            isDoingCustomWord = false
+            table.insert( phonemesTable, string.sub( word, 1, #word-1 ) )
+
+            -- if phoneme is unrecognised, try to add it to error list
+            if not is_present_in_table(phonemesList, string.sub( word, 1, #word-1 )) then
+              if not is_present_in_table(unrecognisedPhonemes, string.sub( word, 1, #word-1 )) then
+                table.insert(unrecognisedPhonemes, string.sub( word, 1, #word-1 ))
+              end
+            end
+
+            phonemeCounter = phonemeCounter + 1
+
+            -- record end of word position
+            table.insert( wordIndexes, phonemeCounter )
+
+            else
+              table.insert( phonemesTable, word )
+              -- if phoneme is unrecognised, try to add it to error list
+              if not is_present_in_table(phonemesList, word) then
+                if not is_present_in_table(unrecognisedPhonemes, word) then
+                  table.insert(unrecognisedPhonemes, word)
+                end
+              end
+              phonemeCounter = phonemeCounter + 1
+          end
+
+        elseif cmuDictFileTable[word] then
+          phonemesString = cmuDictFileTable[word]
+          for v in string.gmatch(phonemesString, "[^%s]+") do
+            table.insert(phonemesTable, v)
+            phonemeCounter = phonemeCounter + 1
+          end
+          -- record end of word position
+          table.insert( wordIndexes, phonemeCounter )
+        elseif string.sub(word,1,1) == "[" then
+          isDoingCustomWord = true
+          table.insert( phonemesTable, string.sub( word, 2, #word ) )
           -- if phoneme is unrecognised, try to add it to error list
-          if not is_present_in_table(phonemesList, word) then
-            if not is_present_in_table(unrecognisedPhonemes, word) then
-              table.insert(unrecognisedPhonemes, word)
+          if not is_present_in_table(phonemesList, string.sub( word, 2, #word )) then
+            if not is_present_in_table(unrecognisedPhonemes, string.sub( word, 2, #word )) then
+              table.insert(unrecognisedPhonemes, string.sub( word, 2, #word ))
             end
           end
           phonemeCounter = phonemeCounter + 1
-      end
-
-    elseif cmuDictFileTable[word] then
-      phonemesString = cmuDictFileTable[word]
-      for v in string.gmatch(phonemesString, "[^%s]+") do
-        table.insert(phonemesTable, v)
-        phonemeCounter = phonemeCounter + 1
-      end
-      -- record end of word position
-      table.insert( wordIndexes, phonemeCounter )
-    elseif string.sub(word,1,1) == "[" then
-      isDoingCustomWord = true
-      table.insert( phonemesTable, string.sub( word, 2, #word ) )
-      -- if phoneme is unrecognised, try to add it to error list
-      if not is_present_in_table(phonemesList, string.sub( word, 2, #word )) then
-        if not is_present_in_table(unrecognisedPhonemes, string.sub( word, 2, #word )) then
-          table.insert(unrecognisedPhonemes, string.sub( word, 2, #word ))
+        elseif not is_present_in_table(unrecognisedWords, word) then
+          table.insert( unrecognisedWords, word)
         end
-      end
-      phonemeCounter = phonemeCounter + 1
-    elseif not is_present_in_table(unrecognisedWords, word) then
-      table.insert( unrecognisedWords, word)
-    end
+    end -- end if instrumentName then ...
   end -- end for loop
 
   -- throw error if unrecognised things present
@@ -355,29 +374,29 @@ function textToSpeech.convertText(text, globalPlayback, entityBlockLength, timeB
   end
 
   local entities = {}
-  local usedNotesSet = {}
   local timeCounter = 1
+
+  local lookupList = {}
+
+  if instrumentName == "voiceHL1" then
+    lookupList = hl1WordsTable
+    else
+      lookupList = phonemesList
+  end
 
   -- go through each phoneme and work out total time
   for k,v in pairs(phonemesTable) do
-
-    local noteIndex = index_of_value_in_table(phonemesList,v) - 1
-
-    if is_present_in_table(usedNotesSet,noteIndex) then
-      else
-      table.insert( usedNotesSet, noteIndex)
-    end
-
+  
+    local noteIndex = index_of_value_in_table(lookupList,v) - 1
+    
     if is_present_in_table(wordIndexes, k) then
-      -- if at end of word add phoneme length plus pause to timer
-      timeCounter = timeCounter + ((voiceTimings[index_of_value_in_table(phonemesList,v)]*60)/1000) + timeBetweenWords
+      -- if at end of word add phoneme length plus pause to timer (converts timings in ms to ticks)
+      timeCounter = timeCounter + ((voiceTimings[index_of_value_in_table(lookupList,v)]*60)/1000) + timeBetweenWords
       else
         -- otherwise just increment the timer by the length of the phoneme
-        timeCounter = timeCounter + (voiceTimings[index_of_value_in_table(phonemesList,v)]*60)/1000
+        timeCounter = timeCounter + (voiceTimings[index_of_value_in_table(lookupList,v)]*60)/1000
     end
   end -- end for loop
-
-  local numUniqueNotes = #usedNotesSet
 
   local length = math.ceil( timeCounter )
 
@@ -395,7 +414,7 @@ function textToSpeech.convertText(text, globalPlayback, entityBlockLength, timeB
   -- add speaker entities
   for k,v in pairs(phonemesTable) do
 
-    noteIndex = index_of_value_in_table(phonemesList,v) - 1
+    noteIndex = index_of_value_in_table(lookupList,v) - 1
 
     entity = {
       entity_number=entityNum,name="programmable-speaker",position={x=xPos,y=yPos}, direction=4, 
@@ -417,10 +436,10 @@ function textToSpeech.convertText(text, globalPlayback, entityBlockLength, timeB
     -- increment timer
     if is_present_in_table(wordIndexes, k) then
       -- add time for phoneme plus gap between words
-      timeCounter = timeCounter + ((voiceTimings[index_of_value_in_table(phonemesList,v)]*60)/1000) + timeBetweenWords
+      timeCounter = timeCounter + ((voiceTimings[index_of_value_in_table(lookupList,v)]*60)/1000) + timeBetweenWords
       else
         -- just add the time for phoneme
-        timeCounter = timeCounter + (voiceTimings[index_of_value_in_table(phonemesList,v)]*60)/1000
+        timeCounter = timeCounter + (voiceTimings[index_of_value_in_table(lookupList,v)]*60)/1000
     end
   end -- end add speaker for loop
 
