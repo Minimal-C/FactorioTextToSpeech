@@ -31,14 +31,14 @@ local function create_main_gui(player)
 
   local root
   
-  if player.gui.top.text_to_speech_gui_root then
-    root = player.gui.top.text_to_speech_gui_root
+  if player.gui["top"].text_to_speech_gui_root then
+    root = player.gui["top"].text_to_speech_gui_root
     else
-      root = player.gui.top.add{
+      root = player.gui["top"].add{
         type="frame",
         name="text_to_speech_gui_root",
         direction="vertical",
-        style="outer_frame_style"
+        style="outer_frame"
       }
   end
 
@@ -47,7 +47,7 @@ local function create_main_gui(player)
     type="sprite-button",
     name="toggle_gui_button",
     sprite="text-to-speech-logo-sprite",
-    style="icon_button_style"
+    style="icon_button"
   }
 
   local main_frame = root.add{
@@ -60,14 +60,13 @@ local function create_main_gui(player)
     type="label",
     name="title_label",
     caption="Text To Speech",
-    style="frame_caption_label_style"
+    style="frame_caption_label"
   }
 
   local action_buttons = main_frame.add{
     type="flow",
     name="action_buttons",
-    direction="horizontal",
-    style="description_flow_style"
+    direction="horizontal"
   }
   
   action_buttons.add{
@@ -85,13 +84,13 @@ local function create_main_gui(player)
     name="submit_button",
     sprite="text-to-speech-submit-sprite",
     tooltip="Click here with an empty blueprint to convert text to a speaker blueprint",
-    style="slot_button_style"
+    style="slot_button"
   }
   
   local settings_container = main_frame.add{
     type="table",
     name="settings_container",
-    colspan=2
+    column_count=2
   }
 
   settings_container.add{
@@ -129,7 +128,7 @@ local function create_main_gui(player)
     type="textfield",
     name="block_width_field",
     text="16",
-    style="number_textfield_style"
+    style="number_textfield"
   }
 
   settings_container.add{
@@ -142,7 +141,7 @@ local function create_main_gui(player)
     type="textfield",
     name="time_between_words_field",
     text="15",
-    style="number_textfield_style"
+    style="number_textfield"
   }
 
 end
@@ -153,17 +152,16 @@ end
 -- @param player        The player who you wish to draw the gui for.
 -----------------------------------------------------------------------------
 local function create_hidden_gui(player)
-  
   local root
 
-  if player.gui.top.text_to_speech_gui_root then
-    root = player.gui.top.text_to_speech_gui_root
+  if player.gui["top"].text_to_speech_gui_root then
+    root = player.gui["top"].text_to_speech_gui_root
     else
-      root = player.gui.top.add{
+      root = player.gui["top"].add{
         type="frame",
         name="text_to_speech_gui_root",
         direction="vertical",
-        style="outer_frame_style"
+        style="outer_frame"
       }
   end
 
@@ -171,9 +169,8 @@ local function create_hidden_gui(player)
     type="sprite-button",
     name="toggle_gui_button",
     sprite="text-to-speech-logo-sprite",
-    style="icon_button_style"
+    style="icon_button"
   }
-
 end
 
 -----------------------------------------------------------------------------
@@ -184,13 +181,13 @@ end
 local function toggle_gui(player)
   
   -- if root has exactly one child (the hide button), create main gui
-  if (#player.gui.top.text_to_speech_gui_root.children == 1) then
+  if (#player.gui["top"].text_to_speech_gui_root.children == 1) then
     --show gui
-      player.gui.top.text_to_speech_gui_root.clear()
+      player.gui["top"].text_to_speech_gui_root.clear()
       create_main_gui(player)
     else
       -- hide gui
-      player.gui.top.text_to_speech_gui_root.clear()
+      player.gui["top"].text_to_speech_gui_root.clear()
       create_hidden_gui(player)
   end
 end
@@ -205,7 +202,7 @@ end
 -----------------------------------------------------------------------------
 local function show_error_gui(title, message, player)
   
-  local root = player.gui.top.text_to_speech_gui_root
+  local root = player.gui["top"].text_to_speech_gui_root
 
   if not root.main_frame.error_frame then
     root.main_frame.add{
@@ -221,14 +218,14 @@ local function show_error_gui(title, message, player)
     type="label",
     name="error_label" .. errNum,
     caption=title,
-    style="bold_red_label_style"
+    style="bold_red_label"
   }
 
   root.main_frame.error_frame.add{
     type="text-box",
     name="error_textbox" .. errNum,
     text=message,
-    style="notice_textbox_style"
+    style="notice_textbox"
   }
   -- doesn't work inside instantiation?
   -- get last child from error frame
@@ -246,7 +243,7 @@ end
 -----------------------------------------------------------------------------
 local function show_success_gui(title, message, player)
   
-  local root = player.gui.top.text_to_speech_gui_root
+  local root = player.gui["top"].text_to_speech_gui_root
 
   if not root.main_frame.success_frame then
     root.main_frame.add{
@@ -260,14 +257,14 @@ local function show_success_gui(title, message, player)
     type="label",
     name="success_label",
     caption=title,
-    style="bold_green_label_style"
+    style="bold_green_label"
   }
 
   root.main_frame.success_frame.add{
     type="text-box",
     name="success_textbox",
     text=message,
-    style="notice_textbox_style"
+    style="notice_textbox"
   }
   -- doesn't work inside instantiation?
   -- get last child from success frame, and do the thing
@@ -277,7 +274,7 @@ end
 
 local function show_warning_gui(title, message, player)
 
-  local root = player.gui.top.text_to_speech_gui_root
+  local root = player.gui["top"].text_to_speech_gui_root
 
     if not root.main_frame.warning_frame then
       root.main_frame.add{
@@ -291,14 +288,14 @@ local function show_warning_gui(title, message, player)
       type="label",
       name="warning_label",
       caption=title,
-      style="menu_message_style"
+      style="menu_message"
     }
 
     root.main_frame.warning_frame.add{
       type="text-box",
       name="warning_textbox",
       text=message,
-      style="notice_textbox_style"
+      style="notice_textbox"
     }
     -- doesn't work inside instantiation?
     -- get last child from success frame, and do the thing
@@ -374,7 +371,7 @@ end
 -----------------------------------------------------------------------------
 local function generate_blueprint(player)
 
-  local root = player.gui.top.text_to_speech_gui_root
+  local root = player.gui["top"].text_to_speech_gui_root
 
   local inputText = root.main_frame.action_buttons.input_field.text
   local globalPlayback = root.main_frame.settings_container.global_playback_checkbox.state
@@ -497,7 +494,7 @@ function textToSpeechGui.mod_update(data)
         if data.mod_changes["Text-To-Speech"] then
           --reload and redraw
           for _, player in pairs(game.players) do
-            player.gui.top.text_to_speech_gui_root.destroy()
+            player.gui["top"].text_to_speech_gui_root.destroy()
           end
           textToSpeechGui.mod_init()
         end
