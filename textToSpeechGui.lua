@@ -3,13 +3,17 @@ local serpent = require "serpent"
 
 if not textToSpeechGui then textToSpeechGui = {} end
 
+BLUEPRINT_MODE = 1
+PREVIEW_MODE = 2
+CHAT_MODE = 3
 
-times = {}
-sounds = {}
-counter = 0
-length = 0
-is_speaking = false
-startTime = 0
+-- times = {}
+-- sounds = {}
+-- counter = 0
+-- length = 0
+-- is_speaking = false
+-- startTime = 0
+-- playSpeechGlobal = false
 
 -----------------------------------------------------------------------------
 -- Gets a list of the names of tts compatible voices.
@@ -94,6 +98,20 @@ local function create_main_gui(player)
     sprite="text-to-speech-submit-sprite",
     tooltip="Click here with an empty blueprint to convert text to a speaker blueprint",
     style="slot_button"
+  }
+
+  action_buttons.add{
+    type="button",
+    name="preview_button",
+    caption="Preview",
+    tooltip="Preview the speech (Non-Global, only audible to you)"
+  }
+
+  action_buttons.add{
+    type="button",
+    name="chat_button",
+    caption="Chat",
+    tooltip="Send the speech to chat (Global, audible to all players)"
   }
   
   local settings_container = main_frame.add{
@@ -370,39 +388,55 @@ local function show_unrecognised_things_error(title, unrecognisedThings, player)
 
 end
 
-local function playEntities(entities, player)
-  times = {}
-  sounds = {}
-  counter = 3
-  length = #entities
+local function playEntities(entities, isSpeechGlobal, player)
+  global = {}
+  global.times = {}
+  global.note_ids = {}
+  global.speechCounter = 3
+  global.numSounds = #entities
 
-  game.print("length is "..length)
-  for i = 3,length do
-    times[i] = entities[i]["control_behavior"]["circuit_condition"]["constant"]
-    sounds[i] = entities[i]["control_behavior"]["circuit_parameters"]["note_id"] + 1
+  for i = 3,global.numSounds do
+    
+    global.times[i] = entities[i]["control_behavior"]["circuit_condition"]["constant"]
+    
+    -- add one to note id because it is indexed from 0
+    global.note_ids[i] = entities[i]["control_behavior"]["circuit_parameters"]["note_id"] + 1
+
   end
-  game.print("sounds is"..#sounds)
-  startTime = game.tick
-  
-  is_speaking = true
 
-  player.print("pt3")
+  global.startTime = game.tick
+  global.playSpeechGlobal = isSpeechGlobal
+  global.is_speaking = true
+  global.speechOwner = player
+
 end
 
-function textToSpeechGui.on_tick(event)
-  if is_speaking then
-    local tick = game.tick-startTime
-    if tick >= times[counter] then
-      game.print("sounds[counter] = "..sounds[counter].." and "..textToSpeech.phonemesList[sounds[counter]])
-      game.print("making sound! ".."entity-mined/voice1-"..string.lower(textToSpeech.phonemesList[sounds[counter]]))
-      game.play_sound{path="entity-mined/voice1-"..string.lower(textToSpeech.phonemesList[sounds[counter]])}
-      if counter == length then
-        is_speaking = false
+local function evaluate_errors(err, player)
+  
+    local unrecognisedPhonemes = err[1]
+    local unrecognisedWords = err[2]
+    local parameterErrors = err[3]
+  
+    -- if has unrecognised phonemes show error
+    if #unrecognisedPhonemes>0 then
+      show_unrecognised_things_error("Error - Unrecognised Phonemes",unrecognisedPhonemes, player)
+    end
+    -- if has unrecognised words show error
+    if #unrecognisedWords>0 then
+      show_unrecognised_things_error("Error - Unrecognised Words",unrecognisedWords, player)
+    end
+  
+    -- if has any parameter errors show them
+    if #parameterErrors>0 then
+  
+      for _,info in pairs(parameterErrors) do
+        local title = info[1]
+        local message = info[2]
+        show_error_gui(title, message, player)
       end
-      counter = counter + 1
+  
     end
   end
-end
 
 -----------------------------------------------------------------------------
 -- Creates a Factorio blueprint, takes input from the in-game gui and uses
@@ -411,11 +445,14 @@ end
 -- player's cursor_stack, which should be a blueprint.
 --
 -- @param player        The player who made the tts request
+-- @param mode          Integer specifying what we want [1=set entities to cusor blueprint] [2=preview speech] [3=global chat play speech]
 -----------------------------------------------------------------------------
-local function generate_blueprint(player)
+local function generate_blueprint_entities(player, mode)
+
+  -- TODO: this method does too much, should be refactored
 
   local root = player.gui["top"].text_to_speech_gui_root
-
+  
   local inputText = root.main_frame.action_buttons.input_field.text
   local globalPlayback = root.main_frame.settings_container.global_playback_checkbox.state
   local blockWidth = tonumber(root.main_frame.settings_container.block_width_field.text)
@@ -453,47 +490,41 @@ local function generate_blueprint(player)
       instrumentName
     )
 
-  if (status) and (player.cursor_stack.valid_for_read) and (player.cursor_stack.name == "blueprint") then
-    player.cursor_stack.set_blueprint_entities(entities)
-    show_success_gui("Success!", "The sentence has been added to your blueprint.", player)
-    playEntities(entities,player)
-  else
-    -- if the player clicks the submit button with an empty cursor show error
-    if not player.cursor_stack.valid_for_read then
-      show_error_gui("Error - Cannot Detect Blueprint", "You clicked with an empty cursor\n"..
-        "Click the button with an empty blueprint on the cursor instead.", player)
-      
-      -- if the player clicks with something that isn't a blueprint show error
-      -- done in nested if because attempt to read cursor_stack of empty cursor fails and does not return nil,
-      elseif not (player.cursor_stack.name == "blueprint") then
-        show_error_gui("Error - Cannot Detect Blueprint", "You clicked with something that wasn't a blueprint.\n"..
+  if mode == BLUEPRINT_MODE then
+
+    if (status) and (player.cursor_stack.valid_for_read) and (player.cursor_stack.name == "blueprint") then
+      show_success_gui("Success!", "The sentence has been added to your blueprint.", player)
+      player.cursor_stack.set_blueprint_entities(entities)
+    else
+      -- if the player clicks the submit button with an empty cursor show error
+      if not player.cursor_stack.valid_for_read then
+        show_error_gui("Error - Cannot Detect Blueprint", "You clicked with an empty cursor\n"..
           "Click the button with an empty blueprint on the cursor instead.", player)
-    end
-    
-    local unrecognisedPhonemes = err[1]
-    local unrecognisedWords = err[2]
-    local parameterErrors = err[3]
-
-    -- if has unrecognised phonemes show error
-    if #unrecognisedPhonemes>0 then
-      show_unrecognised_things_error("Error - Unrecognised Phonemes",unrecognisedPhonemes, player)
-    end
-    -- if has unrecognised words show error
-    if #unrecognisedWords>0 then
-      show_unrecognised_things_error("Error - Unrecognised Words",unrecognisedWords, player)
-    end
-
-    -- if has any parameter errors show them
-    if #parameterErrors>0 then
-      for _,info in pairs(parameterErrors) do
-        local title = info[1]
-        local message = info[2]
-        show_error_gui(title, message, player)
+        
+        -- if the player clicks with something that isn't a blueprint show error
+        -- done in nested if because attempt to read cursor_stack of empty cursor fails and does not return nil,
+        elseif not (player.cursor_stack.name == "blueprint") then
+          show_error_gui("Error - Cannot Detect Blueprint", "You clicked with something that wasn't a blueprint.\n"..
+            "Click the button with an empty blueprint on the cursor instead.", player)
       end
     end
+  elseif mode == PREVIEW_MODE then
+      
+    if status then
+      playEntities(entities, false, player)
+    end
+
+  elseif mode == CHAT_MODE then
     
+    if status then
+      playEntities(entities, true, player)
+      game.print("[TTS] "..player.name..": "..inputText)
+    end
+
   end
-    
+
+  evaluate_errors(err, player)
+
 end
 
 -----------------------------------------------------------------------------
@@ -550,11 +581,52 @@ end
 -- When a gui clickable is clicked by a player, take the corresponding action.
 -----------------------------------------------------------------------------
 function textToSpeechGui.on_gui_click(event)
+  
+  local player = game.players[event.player_index] 
 
   if event.element.name == "submit_button" then
-    generate_blueprint(game.players[event.player_index])
-    elseif event.element.name == "toggle_gui_button" then
-      toggle_gui(game.players[event.player_index])
+    
+    generate_blueprint_entities(player, BLUEPRINT_MODE)
+
+    elseif event.element.name == "preview_button" then
+      
+      generate_blueprint_entities(player, PREVIEW_MODE)
+
+      elseif event.element.name == "chat_button" then
+
+        generate_blueprint_entities(player, CHAT_MODE)
+
+        elseif event.element.name == "toggle_gui_button" then
+          toggle_gui(game.players[event.player_index])
   end
   
+end
+
+function textToSpeechGui.on_tick(event)
+  
+  if global.is_speaking then
+
+    -- elapsed ticks since method play_entities was called, used for sound timing
+    local elapsedTicks = game.tick-global.startTime
+
+    if elapsedTicks >= global.times[global.speechCounter] then
+
+      -- create the soundPath for this speech sound, note it uses the entity mined sounds from the dummy entities created in control.lua
+      local speechPath = "entity-mined/voice1-"
+      speechPath = speechPath .. string.lower(textToSpeech.phonemesList[global.note_ids[global.speechCounter]])
+
+      if global.playSpeechGlobal then
+        game.play_sound{path = speechPath}
+      else
+        global.speechOwner.play_sound{path = speechPath}
+      end
+
+      -- if we're done with the sentence
+      if global.speechCounter == global.numSounds then
+        global.is_speaking = false
+      end
+
+      global.speechCounter = global.speechCounter + 1
+    end
+  end
 end
