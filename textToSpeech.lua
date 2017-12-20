@@ -10,7 +10,7 @@ local cmuDict = require "cmuDict"
 local timings = require "timings"
 local hl1Words = require "hl1Words"
 
-local phonemesList = {"AA","AE","AH","AO","AW","AY","B","CH","D","DH","EH","ER","EY","F","G","HH","IH","IY","JH","K","L","M","N",
+textToSpeech.phonemesList = {"AA","AE","AH","AO","AW","AY","B","CH","D","DH","EH","ER","EY","F","G","HH","IH","IY","JH","K","L","M","N",
 	"NG","OW","OY","P","R","S","SH","T","TH","UH","UW","V","W","Y","Z","ZH"}
 
 local cmuDictFileTable = {}
@@ -319,7 +319,7 @@ function textToSpeech.convertText(text, globalPlayback, entityBlockLength, timeB
             table.insert( phonemesTable, string.sub( word, 1, #word-1 ) )
 
             -- if phoneme is unrecognised, try to add it to error list
-            if not is_present_in_table(phonemesList, string.sub( word, 1, #word-1 )) then
+            if not is_present_in_table(textToSpeech.phonemesList, string.sub( word, 1, #word-1 )) then
               if not is_present_in_table(unrecognisedPhonemes, string.sub( word, 1, #word-1 )) then
                 table.insert(unrecognisedPhonemes, string.sub( word, 1, #word-1 ))
               end
@@ -333,7 +333,7 @@ function textToSpeech.convertText(text, globalPlayback, entityBlockLength, timeB
             else
               table.insert( phonemesTable, word )
               -- if phoneme is unrecognised, try to add it to error list
-              if not is_present_in_table(phonemesList, word) then
+              if not is_present_in_table(textToSpeech.phonemesList, word) then
                 if not is_present_in_table(unrecognisedPhonemes, word) then
                   table.insert(unrecognisedPhonemes, word)
                 end
@@ -353,7 +353,7 @@ function textToSpeech.convertText(text, globalPlayback, entityBlockLength, timeB
           isDoingCustomWord = true
           table.insert( phonemesTable, string.sub( word, 2, #word ) )
           -- if phoneme is unrecognised, try to add it to error list
-          if not is_present_in_table(phonemesList, string.sub( word, 2, #word )) then
+          if not is_present_in_table(textToSpeech.phonemesList, string.sub( word, 2, #word )) then
             if not is_present_in_table(unrecognisedPhonemes, string.sub( word, 2, #word )) then
               table.insert(unrecognisedPhonemes, string.sub( word, 2, #word ))
             end
@@ -381,7 +381,7 @@ function textToSpeech.convertText(text, globalPlayback, entityBlockLength, timeB
   if instrumentName == "voiceHL1" then
     lookupList = hl1WordsTable
     else
-      lookupList = phonemesList
+      lookupList = textToSpeech.phonemesList
   end
 
   -- go through each phoneme and work out total time
