@@ -1,6 +1,15 @@
 local textToSpeech = require "textToSpeech"
+local serpent = require "serpent"
 
 if not textToSpeechGui then textToSpeechGui = {} end
+
+
+times = {}
+sounds = {}
+counter = 0
+length = 0
+is_speaking = false
+startTime = 0
 
 -----------------------------------------------------------------------------
 -- Gets a list of the names of tts compatible voices.
@@ -361,6 +370,40 @@ local function show_unrecognised_things_error(title, unrecognisedThings, player)
 
 end
 
+local function playEntities(entities, player)
+  times = {}
+  sounds = {}
+  counter = 3
+  length = #entities
+
+  game.print("length is "..length)
+  for i = 3,length do
+    times[i] = entities[i]["control_behavior"]["circuit_condition"]["constant"]
+    sounds[i] = entities[i]["control_behavior"]["circuit_parameters"]["note_id"] + 1
+  end
+  game.print("sounds is"..#sounds)
+  startTime = game.tick
+  
+  is_speaking = true
+
+  player.print("pt3")
+end
+
+function textToSpeechGui.on_tick(event)
+  if is_speaking then
+    local tick = game.tick-startTime
+    if tick >= times[counter] then
+      game.print("sounds[counter] = "..sounds[counter].." and "..textToSpeech.phonemesList[sounds[counter]])
+      game.print("making sound! ".."entity-mined/voice1-"..string.lower(textToSpeech.phonemesList[sounds[counter]]))
+      game.play_sound{path="entity-mined/voice1-"..string.lower(textToSpeech.phonemesList[sounds[counter]])}
+      if counter == length then
+        is_speaking = false
+      end
+      counter = counter + 1
+    end
+  end
+end
+
 -----------------------------------------------------------------------------
 -- Creates a Factorio blueprint, takes input from the in-game gui and uses
 -- those parameters to do the text-to-speech conversion. 
@@ -413,6 +456,7 @@ local function generate_blueprint(player)
   if (status) and (player.cursor_stack.valid_for_read) and (player.cursor_stack.name == "blueprint") then
     player.cursor_stack.set_blueprint_entities(entities)
     show_success_gui("Success!", "The sentence has been added to your blueprint.", player)
+    playEntities(entities,player)
   else
     -- if the player clicks the submit button with an empty cursor show error
     if not player.cursor_stack.valid_for_read then
@@ -472,6 +516,7 @@ end
 -----------------------------------------------------------------------------
 function textToSpeechGui.mod_on_load()
   textToSpeech.init()
+
 end
 
 -----------------------------------------------------------------------------
