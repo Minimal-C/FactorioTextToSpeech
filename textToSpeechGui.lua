@@ -388,7 +388,7 @@ local function show_unrecognised_things_error(title, unrecognisedThings, player)
 
 end
 
-local function playEntities(entities, isSpeechGlobal, player)
+local function playEntities(entities, isSpeechGlobal, player, voiceName)
   global = {}
   global.times = {}
   global.note_ids = {}
@@ -408,6 +408,7 @@ local function playEntities(entities, isSpeechGlobal, player)
   global.playSpeechGlobal = isSpeechGlobal
   global.is_speaking = true
   global.speechOwner = player
+  global.voiceName = voiceName
 
 end
 
@@ -511,13 +512,13 @@ local function generate_blueprint_entities(player, mode)
   elseif mode == PREVIEW_MODE then
       
     if status then
-      playEntities(entities, false, player)
+      playEntities(entities, false, player, instrumentName)
     end
 
   elseif mode == CHAT_MODE then
     
     if status then
-      playEntities(entities, true, player)
+      playEntities(entities, true, player, instrumentName)
       game.print("[TTS] "..player.name..": "..inputText)
     end
 
@@ -611,9 +612,18 @@ function textToSpeechGui.on_tick(event)
 
     if elapsedTicks >= global.times[global.speechCounter] then
 
+      -- speech lookup table, holds phoneme/sound names
+      local speechLUT = {}
+
+      if global.voiceName == "voiceHL1" then
+        speechLUT = textToSpeech.hl1WordsTable
+      else
+        speechLUT = textToSpeech.phonemesList
+      end
       -- create the soundPath for this speech sound, note it uses the entity mined sounds from the dummy entities created in control.lua
-      local speechPath = "entity-mined/voice1-"
-      speechPath = speechPath .. string.lower(textToSpeech.phonemesList[global.note_ids[global.speechCounter]])
+      local speechPath = "entity-mined/"
+      speechPath = speechPath .. global.voiceName .. "-"
+      speechPath = speechPath .. string.lower(speechLUT[global.note_ids[global.speechCounter]])
 
       if global.playSpeechGlobal then
         game.play_sound{path = speechPath}
