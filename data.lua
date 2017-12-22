@@ -1,3 +1,4 @@
+
 -- Add dummy entities so we can use their sounds to play mod speech sounds using factorio api play_sound()
 -- Must use dummy entities because we're limited to playing entity/tile sounds, utility sounds (not extensible), and ambient sounds (counts as music, people often mute ingame music, would have to reenable it etc... )
 function add_dummy_entity (name, soundFileName)
@@ -21,6 +22,8 @@ function add_dummy_entity (name, soundFileName)
 
 end
 
+-- begin mod sprite data
+
 data:extend{
     {
       type="sprite",
@@ -37,8 +40,26 @@ data:extend{
       priority = "extra-high-no-scale",
       width = 32,
       height = 32,
+    },
+    {
+      type="sprite",
+      name="text-to-speech-preview-sprite",
+      filename = "__Text-To-Speech__/graphics/previewTTSIcon.png",
+      priority = "extra-high-no-scale",
+      width = 32,
+      height = 32,
+    },
+    {
+      type="sprite",
+      name="text-to-speech-global-sprite",
+      filename = "__Text-To-Speech__/graphics/globalTTSIcon.png",
+      priority = "extra-high-no-scale",
+      width = 32,
+      height = 32,
     }
 }
+
+-- begin dummy entity generation
 
 add_dummy_entity("voice1-aa","__Text-To-Speech__/sound/voice1/aa.ogg")
 add_dummy_entity("voice1-ae","__Text-To-Speech__/sound/voice1/ae.ogg")

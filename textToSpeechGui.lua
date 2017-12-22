@@ -1,19 +1,11 @@
 local textToSpeech = require "textToSpeech"
-local serpent = require "serpent"
 
 if not textToSpeechGui then textToSpeechGui = {} end
 
+-- const values for different speech modes
 BLUEPRINT_MODE = 1
 PREVIEW_MODE = 2
 CHAT_MODE = 3
-
--- times = {}
--- sounds = {}
--- counter = 0
--- length = 0
--- is_speaking = false
--- startTime = 0
--- playSpeechGlobal = false
 
 -----------------------------------------------------------------------------
 -- Gets a list of the names of tts compatible voices.
@@ -34,6 +26,8 @@ local function getCompatibleVoiceList()
 
   return voices
 end
+
+-- TODO: refactor gui and logic apart
 
 -----------------------------------------------------------------------------
 -- Creates the main gui (expanded gui) for a player.
@@ -101,17 +95,19 @@ local function create_main_gui(player)
   }
 
   action_buttons.add{
-    type="button",
+    type="sprite-button",
     name="preview_button",
-    caption="Preview",
-    tooltip="Preview the speech (Non-Global, only audible to you)"
+    sprite="text-to-speech-preview-sprite",
+    tooltip="Preview (only audible to you)",
+    style="slot_button"
   }
 
   action_buttons.add{
-    type="button",
+    type="sprite-button",
     name="chat_button",
-    caption="Chat",
-    tooltip="Send the speech to chat (Global, audible to all players)"
+    sprite="text-to-speech-global-sprite",
+    tooltip="Play message in chat (audible to all players)",
+    style="slot_button"
   }
   
   local settings_container = main_frame.add{
@@ -388,13 +384,30 @@ local function show_unrecognised_things_error(title, unrecognisedThings, player)
 
 end
 
-local function playEntities(entities, isSpeechGlobal, player, voiceName)
+
+-----------------------------------------------------------------------------
+-- Set a sentence to be played (see onTick), takes entities from the text to
+-- speech conversion and sets up the variables/tables for the onTick method to use.
+--
+-- @param entities                     The entities you wish to play
+-----------------------------------------------------------------------------
+local function setupDataForIngameSpeechOutput(entities, isSpeechGlobal, player, voiceName)
+  
+  -- TODO: rename method, ugly name
   global = {}
+
+  global.playSpeechGlobal = isSpeechGlobal
+  global.is_speaking = true
+  global.speechOwner = player
+  global.voiceName = voiceName
+
   global.times = {}
   global.note_ids = {}
   global.speechCounter = 3
   global.numSounds = #entities
 
+  -- start at 3, we ignore the timer entities which are 1 and 2
+  -- go through each speaker entity and get relevant info
   for i = 3,global.numSounds do
     
     global.times[i] = entities[i]["control_behavior"]["circuit_condition"]["constant"]
@@ -405,12 +418,9 @@ local function playEntities(entities, isSpeechGlobal, player, voiceName)
   end
 
   global.startTime = game.tick
-  global.playSpeechGlobal = isSpeechGlobal
-  global.is_speaking = true
-  global.speechOwner = player
-  global.voiceName = voiceName
 
 end
+
 
 local function evaluate_errors(err, player)
   
@@ -440,13 +450,12 @@ local function evaluate_errors(err, player)
   end
 
 -----------------------------------------------------------------------------
--- Creates a Factorio blueprint, takes input from the in-game gui and uses
--- those parameters to do the text-to-speech conversion. 
--- The function will attempt to set the blueprint entities to the item in the
--- player's cursor_stack, which should be a blueprint.
+-- Takes input from the in-game gui and uses
+-- those parameters to do the text-to-speech conversion. Then either plays sound
+-- in local preview mode, global chat mode or generates a speaker blueprint.
 --
 -- @param player        The player who made the tts request
--- @param mode          Integer specifying what we want [1=set entities to cusor blueprint] [2=preview speech] [3=global chat play speech]
+-- @param mode          Integer specifying what we want to do [1=set entities to cusor blueprint] [2=preview speech] [3=global chat play speech]
 -----------------------------------------------------------------------------
 local function generate_blueprint_entities(player, mode)
 
@@ -512,13 +521,13 @@ local function generate_blueprint_entities(player, mode)
   elseif mode == PREVIEW_MODE then
       
     if status then
-      playEntities(entities, false, player, instrumentName)
+      setupDataForIngameSpeechOutput(entities, false, player, instrumentName)
     end
 
   elseif mode == CHAT_MODE then
     
     if status then
-      playEntities(entities, true, player, instrumentName)
+      setupDataForIngameSpeechOutput(entities, true, player, instrumentName)
       game.print("[TTS] "..player.name..": "..inputText)
     end
 
@@ -603,6 +612,9 @@ function textToSpeechGui.on_gui_click(event)
   
 end
 
+-----------------------------------------------------------------------------
+-- If a sentence is set to be played in-game (from setupDataForIngameSpeechOutput method), play it here.
+-----------------------------------------------------------------------------
 function textToSpeechGui.on_tick(event)
   
   if global.is_speaking then
