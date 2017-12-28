@@ -15,7 +15,8 @@ textToSpeech.phonemesList = {"AA","AE","AH","AO","AW","AY","B","CH","D","DH","EH
 
 local cmuDictFileTable = {}
 local timingsTable = {}
-local hl1WordsTable = {}
+
+textToSpeech.hl1WordsTable = {}
 
 -----------------------------------------------------------------------------
 -- Finds the index of a value in a table.
@@ -251,7 +252,7 @@ function textToSpeech.init()
 
   timingsTable = timings.timingsTable
 
-  hl1WordsTable = hl1Words.wordTable
+  textToSpeech.hl1WordsTable = hl1Words.wordTable
 end
 
 -----------------------------------------------------------------------------
@@ -300,7 +301,7 @@ function textToSpeech.convertText(text, globalPlayback, entityBlockLength, timeB
     if instrumentName == "voiceHL1" then
       word = string.lower( word )
       -- I'm reusing the phonemes table to hold actual words here
-      if is_present_in_table(hl1WordsTable, word) then
+      if is_present_in_table(textToSpeech.hl1WordsTable, word) then
         table.insert(phonemesTable, word)
         table.insert(wordIndexes, phonemeCounter)
         phonemeCounter = phonemeCounter + 1
@@ -379,7 +380,7 @@ function textToSpeech.convertText(text, globalPlayback, entityBlockLength, timeB
   local lookupList = {}
 
   if instrumentName == "voiceHL1" then
-    lookupList = hl1WordsTable
+    lookupList = textToSpeech.hl1WordsTable
     else
       lookupList = textToSpeech.phonemesList
   end
