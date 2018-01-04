@@ -3,10 +3,10 @@
 function addDummyEntity (name, soundFileName)
   data:extend{
     {
-			type = "simple-entity",
-			name = name,
-			flags = {"not-on-map"},
-			mined_sound = {
+      type = "simple-entity",
+      name = name,
+      flags = {"not-on-map"},
+      mined_sound = {
         filename = soundFileName
       },
       pictures = {
@@ -14,7 +14,7 @@ function addDummyEntity (name, soundFileName)
           filename = "__Text-To-Speech__/graphics/ttsIcon.png",
           height = 1,
           width = 1
-		    }
+         }
       }
     }
   }

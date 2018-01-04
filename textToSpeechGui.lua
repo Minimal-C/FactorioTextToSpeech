@@ -1,5 +1,5 @@
-local textToSpeech = require "textToSpeech"
-local serpent = require "serpent"
+local textToSpeech. = require "textToSpeech"
+local voiceData = require "voiceData"
 
 if not textToSpeechGui then textToSpeechGui = {} end
 
@@ -630,9 +630,9 @@ function textToSpeechGui.on_tick(event)
       local speechLUT = {}
 
       if global.voiceName == "voiceHL1" then
-        speechLUT = textToSpeech.hl1WordsTable
+        speechLUT = voiceData.hl1Data.wordTable
       else
-        speechLUT = textToSpeech.phonemesList
+        speechLUT = voiceData.phonemesList
       end
       -- create the soundPath for this speech sound, note it uses the entity mined sounds from the dummy entities created in control.lua
       local speechPath = "entity-mined/"

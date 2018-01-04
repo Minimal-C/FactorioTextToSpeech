@@ -4,19 +4,9 @@
 --  in-game Factorio programmable-speaker-instruments using custom voices.
 -----------------------------------------------------------------------------
 
+local voiceData = require "voiceData"
+
 local textToSpeech = {}
-
-local cmuDict = require "cmuDict"
-local timings = require "timings"
-local hl1Words = require "hl1Words"
-
-textToSpeech.phonemesList = {"AA","AE","AH","AO","AW","AY","B","CH","D","DH","EH","ER","EY","F","G","HH","IH","IY","JH","K","L","M","N",
-	"NG","OW","OY","P","R","S","SH","T","TH","UH","UW","V","W","Y","Z","ZH"}
-
-local cmuDictFileTable = {}
-local timingsTable = {}
-
-textToSpeech.hl1WordsTable = {}
 
 -----------------------------------------------------------------------------
 -- Finds the index of a value in a table.
@@ -82,7 +72,7 @@ end
 -- @return            A string of words which describe the integer.
 -----------------------------------------------------------------------------
 local function convertNumberToWords(number)
-  
+
   number = tonumber(number)
   local small = {"one", "two", "three", "four", "five", "six",
         "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen",
@@ -249,11 +239,11 @@ function textToSpeech.init()
   -- get word phoneme definitions, and phoneme timings from respective modules, 
   -- (factorio lua doesn't include file io so this is a workaround, though requires explicit reload on game load)
   -- almost certainly there is a better way to do it than this (this way requires calling this every time game is loaded)
-  cmuDictFileTable = cmuDict.cmuTable
+  -- cmuDictFileTable = cmuDict.cmuTable
 
-  timingsTable = timings.timingsTable
+  -- timingsTable = timings.timingsTable
 
-  textToSpeech.hl1WordsTable = hl1Words.wordTable
+  -- textToSpeech.hl1WordsTable = hl1Words.wordTable
 end
 
 -----------------------------------------------------------------------------
@@ -279,7 +269,18 @@ function textToSpeech.convertText(text, globalPlayback, entityBlockLength, timeB
   -- strip non-word chars from text, except for ' - and [  ]
   local text = string.gsub(text,"[^A-Za-z0-9_'%[%]%-]"," ")
 
-  local voiceTimings = timingsTable[instrumentName]
+  local voiceWords
+  local voiceTimings
+
+  -- if the voice is the HL1 one, use it's timings
+  -- otherwise use the cmudict (assumes all other voices are cmu compatible)
+  if instrumentName == "voiceHL1" then
+    voiceWords = voiceData.hl1Data.wordTable
+    voiceTimings = voiceData.hl1Data.timings
+  else
+    voiceWords = voiceData.cmuData.cmuTable
+    voiceTimings = voiceData.cmuData.timings
+  end
 
   local errorOutput = {}
   local unrecognisedWords = {}
@@ -302,7 +303,7 @@ function textToSpeech.convertText(text, globalPlayback, entityBlockLength, timeB
     if instrumentName == "voiceHL1" then
       word = string.lower( word )
       -- I'm reusing the phonemes table to hold actual words here
-      if isPresent(textToSpeech.hl1WordsTable, word) then
+      if isPresent(voiceData.hl1Data.wordTable, word) then
         table.insert(phonemesTable, word)
         table.insert(wordIndexes, phonemeCounter)
         phonemeCounter = phonemeCounter + 1
@@ -321,7 +322,7 @@ function textToSpeech.convertText(text, globalPlayback, entityBlockLength, timeB
             table.insert( phonemesTable, string.sub( word, 1, #word-1 ) )
 
             -- if phoneme is unrecognised, try to add it to error list
-            if not isPresent(textToSpeech.phonemesList, string.sub( word, 1, #word-1 )) then
+            if not isPresent(voiceData.phonemesList, string.sub( word, 1, #word-1 )) then
               if not isPresent(unrecognisedPhonemes, string.sub( word, 1, #word-1 )) then
                 table.insert(unrecognisedPhonemes, string.sub( word, 1, #word-1 ))
               end
@@ -335,7 +336,7 @@ function textToSpeech.convertText(text, globalPlayback, entityBlockLength, timeB
             else
               table.insert( phonemesTable, word )
               -- if phoneme is unrecognised, try to add it to error list
-              if not isPresent(textToSpeech.phonemesList, word) then
+              if not isPresent(voiceData.phonemesList, word) then
                 if not isPresent(unrecognisedPhonemes, word) then
                   table.insert(unrecognisedPhonemes, word)
                 end
@@ -343,8 +344,8 @@ function textToSpeech.convertText(text, globalPlayback, entityBlockLength, timeB
               phonemeCounter = phonemeCounter + 1
           end
 
-        elseif cmuDictFileTable[word] then
-          phonemesString = cmuDictFileTable[word]
+        elseif voiceData.cmuData.cmuTable[word] then
+          phonemesString = voiceData.cmuData.cmuTable[word]
           for v in string.gmatch(phonemesString, "[^%s]+") do
             table.insert(phonemesTable, v)
             phonemeCounter = phonemeCounter + 1
@@ -355,7 +356,7 @@ function textToSpeech.convertText(text, globalPlayback, entityBlockLength, timeB
           isDoingCustomWord = true
           table.insert( phonemesTable, string.sub( word, 2, #word ) )
           -- if phoneme is unrecognised, try to add it to error list
-          if not isPresent(textToSpeech.phonemesList, string.sub( word, 2, #word )) then
+          if not isPresent(voiceData.phonemesList, string.sub( word, 2, #word )) then
             if not isPresent(unrecognisedPhonemes, string.sub( word, 2, #word )) then
               table.insert(unrecognisedPhonemes, string.sub( word, 2, #word ))
             end
@@ -378,25 +379,17 @@ function textToSpeech.convertText(text, globalPlayback, entityBlockLength, timeB
   local entities = {}
   local timeCounter = 1
 
-  local lookupList = {}
-
-  if instrumentName == "voiceHL1" then
-    lookupList = textToSpeech.hl1WordsTable
-    else
-      lookupList = textToSpeech.phonemesList
-  end
-
   -- go through each phoneme and work out total time
   for k,v in pairs(phonemesTable) do
   
-    local noteIndex = indexOfValue(lookupList,v) - 1
+    local noteIndex = indexOfValue(voiceWords,v) - 1
     
     if isPresent(wordIndexes, k) then
       -- if at end of word add phoneme length plus pause to timer (converts timings in ms to ticks)
-      timeCounter = timeCounter + ((voiceTimings[indexOfValue(lookupList,v)]*60)/1000) + timeBetweenWords
+      timeCounter = timeCounter + ((voiceTimings[indexOfValue(voiceWords,v)]*60)/1000) + timeBetweenWords
       else
         -- otherwise just increment the timer by the length of the phoneme
-        timeCounter = timeCounter + (voiceTimings[indexOfValue(lookupList,v)]*60)/1000
+        timeCounter = timeCounter + (voiceTimings[indexOfValue(voiceWords,v)]*60)/1000
     end
   end -- end for loop
 
@@ -416,7 +409,7 @@ function textToSpeech.convertText(text, globalPlayback, entityBlockLength, timeB
   -- add speaker entities
   for k,v in pairs(phonemesTable) do
 
-    noteIndex = indexOfValue(lookupList,v) - 1
+    noteIndex = indexOfValue(voiceWords,v) - 1
 
     entity = {
       entity_number=entityNum,name="programmable-speaker",position={x=xPos,y=yPos}, direction=4, 
@@ -438,10 +431,10 @@ function textToSpeech.convertText(text, globalPlayback, entityBlockLength, timeB
     -- increment timer
     if isPresent(wordIndexes, k) then
       -- add time for phoneme plus gap between words
-      timeCounter = timeCounter + ((voiceTimings[indexOfValue(lookupList,v)]*60)/1000) + timeBetweenWords
+      timeCounter = timeCounter + ((voiceTimings[indexOfValue(voiceWords,v)]*60)/1000) + timeBetweenWords
       else
         -- just add the time for phoneme
-        timeCounter = timeCounter + (voiceTimings[indexOfValue(lookupList,v)]*60)/1000
+        timeCounter = timeCounter + (voiceTimings[indexOfValue(voiceWords,v)]*60)/1000
     end
   end -- end add speaker for loop
 
@@ -458,7 +451,7 @@ end
 -- @return        boolean value
 -----------------------------------------------------------------------------
 function textToSpeech.are_definitions_loaded()
-  if cmuDictFileTable==nil or timingsTable==nil then
+  if voiceData.cmuData.cmuTable==nil or voiceData.cmuData.timings==nil then
     return false
     else
     return true
