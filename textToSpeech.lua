@@ -27,7 +27,7 @@ textToSpeech.hl1WordsTable = {}
 -- @return              The index of the value, otherwise if value not 
 --                      present then return nil
 -----------------------------------------------------------------------------
-local function index_of_value_in_table(table,value)
+local function indexOfValue(table,value)
   for k,v in pairs(table) do
     if v==value then
       return k
@@ -44,9 +44,9 @@ end
 --
 -- @return              Boolean if present or not
 -----------------------------------------------------------------------------
-local function is_present_in_table(table, value)
+local function isPresent(table, value)
 
-  if index_of_value_in_table(table,value) then
+  if indexOfValue(table,value) then
     return true
     else
       return false
@@ -81,7 +81,8 @@ end
 --
 -- @return            A string of words which describe the integer.
 -----------------------------------------------------------------------------
-local function number_to_words(number)
+local function convertNumberToWords(number)
+  
   number = tonumber(number)
   local small = {"one", "two", "three", "four", "five", "six",
         "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen",
@@ -118,7 +119,7 @@ local function number_to_words(number)
     if (math.floor(tmpLng1) ~= 0) then
       if outP=="" then
         outP = small[math.floor(tmpLng1)] .. " hundred "
-        elseif is_present_in_table(big,outP) or is_present_in_table(big,(string.match( outP,"[^%s]+")))then
+        elseif isPresent(big,outP) or isPresent(big,(string.match( outP,"[^%s]+")))then
           outP = small[math.floor(tmpLng1)] .. " hundred " .. outP
         else
           outP = small[math.floor(tmpLng1)] .. " hundred and " .. outP
@@ -134,7 +135,7 @@ local function number_to_words(number)
     if (math.floor(tmpLng1) ~= 0) then
       if outP=="" then
         outP = big[unit + 1]
-        elseif is_present_in_table(big, outP) then
+        elseif isPresent(big, outP) then
           outP = big[unit + 1] .. " " .. outP
         else
           outP = big[unit + 1] .. " and " .. outP
@@ -291,7 +292,7 @@ function textToSpeech.convertText(text, globalPlayback, entityBlockLength, timeB
   local phonemeCounter = 0
 
   --replace numbers with word equivalents
-  text = string.gsub( text, "%-?%d+", number_to_words)
+  text = string.gsub( text, "%-?%d+", convertNumberToWords)
 
   -- process input text into phoneme representation
   -- and record where words end, for pauses (see next for loop)
@@ -301,7 +302,7 @@ function textToSpeech.convertText(text, globalPlayback, entityBlockLength, timeB
     if instrumentName == "voiceHL1" then
       word = string.lower( word )
       -- I'm reusing the phonemes table to hold actual words here
-      if is_present_in_table(textToSpeech.hl1WordsTable, word) then
+      if isPresent(textToSpeech.hl1WordsTable, word) then
         table.insert(phonemesTable, word)
         table.insert(wordIndexes, phonemeCounter)
         phonemeCounter = phonemeCounter + 1
@@ -320,8 +321,8 @@ function textToSpeech.convertText(text, globalPlayback, entityBlockLength, timeB
             table.insert( phonemesTable, string.sub( word, 1, #word-1 ) )
 
             -- if phoneme is unrecognised, try to add it to error list
-            if not is_present_in_table(textToSpeech.phonemesList, string.sub( word, 1, #word-1 )) then
-              if not is_present_in_table(unrecognisedPhonemes, string.sub( word, 1, #word-1 )) then
+            if not isPresent(textToSpeech.phonemesList, string.sub( word, 1, #word-1 )) then
+              if not isPresent(unrecognisedPhonemes, string.sub( word, 1, #word-1 )) then
                 table.insert(unrecognisedPhonemes, string.sub( word, 1, #word-1 ))
               end
             end
@@ -334,8 +335,8 @@ function textToSpeech.convertText(text, globalPlayback, entityBlockLength, timeB
             else
               table.insert( phonemesTable, word )
               -- if phoneme is unrecognised, try to add it to error list
-              if not is_present_in_table(textToSpeech.phonemesList, word) then
-                if not is_present_in_table(unrecognisedPhonemes, word) then
+              if not isPresent(textToSpeech.phonemesList, word) then
+                if not isPresent(unrecognisedPhonemes, word) then
                   table.insert(unrecognisedPhonemes, word)
                 end
               end
@@ -354,13 +355,13 @@ function textToSpeech.convertText(text, globalPlayback, entityBlockLength, timeB
           isDoingCustomWord = true
           table.insert( phonemesTable, string.sub( word, 2, #word ) )
           -- if phoneme is unrecognised, try to add it to error list
-          if not is_present_in_table(textToSpeech.phonemesList, string.sub( word, 2, #word )) then
-            if not is_present_in_table(unrecognisedPhonemes, string.sub( word, 2, #word )) then
+          if not isPresent(textToSpeech.phonemesList, string.sub( word, 2, #word )) then
+            if not isPresent(unrecognisedPhonemes, string.sub( word, 2, #word )) then
               table.insert(unrecognisedPhonemes, string.sub( word, 2, #word ))
             end
           end
           phonemeCounter = phonemeCounter + 1
-        elseif not is_present_in_table(unrecognisedWords, word) then
+        elseif not isPresent(unrecognisedWords, word) then
           table.insert( unrecognisedWords, word)
         end
     end -- end if instrumentName then ...
@@ -388,14 +389,14 @@ function textToSpeech.convertText(text, globalPlayback, entityBlockLength, timeB
   -- go through each phoneme and work out total time
   for k,v in pairs(phonemesTable) do
   
-    local noteIndex = index_of_value_in_table(lookupList,v) - 1
+    local noteIndex = indexOfValue(lookupList,v) - 1
     
-    if is_present_in_table(wordIndexes, k) then
+    if isPresent(wordIndexes, k) then
       -- if at end of word add phoneme length plus pause to timer (converts timings in ms to ticks)
-      timeCounter = timeCounter + ((voiceTimings[index_of_value_in_table(lookupList,v)]*60)/1000) + timeBetweenWords
+      timeCounter = timeCounter + ((voiceTimings[indexOfValue(lookupList,v)]*60)/1000) + timeBetweenWords
       else
         -- otherwise just increment the timer by the length of the phoneme
-        timeCounter = timeCounter + (voiceTimings[index_of_value_in_table(lookupList,v)]*60)/1000
+        timeCounter = timeCounter + (voiceTimings[indexOfValue(lookupList,v)]*60)/1000
     end
   end -- end for loop
 
@@ -415,7 +416,7 @@ function textToSpeech.convertText(text, globalPlayback, entityBlockLength, timeB
   -- add speaker entities
   for k,v in pairs(phonemesTable) do
 
-    noteIndex = index_of_value_in_table(lookupList,v) - 1
+    noteIndex = indexOfValue(lookupList,v) - 1
 
     entity = {
       entity_number=entityNum,name="programmable-speaker",position={x=xPos,y=yPos}, direction=4, 
@@ -435,12 +436,12 @@ function textToSpeech.convertText(text, globalPlayback, entityBlockLength, timeB
     xPos, yPos, goRight = doEntityArrangement(xPos, yPos, goRight, 1, 1, entityBlockLength)
 
     -- increment timer
-    if is_present_in_table(wordIndexes, k) then
+    if isPresent(wordIndexes, k) then
       -- add time for phoneme plus gap between words
-      timeCounter = timeCounter + ((voiceTimings[index_of_value_in_table(lookupList,v)]*60)/1000) + timeBetweenWords
+      timeCounter = timeCounter + ((voiceTimings[indexOfValue(lookupList,v)]*60)/1000) + timeBetweenWords
       else
         -- just add the time for phoneme
-        timeCounter = timeCounter + (voiceTimings[index_of_value_in_table(lookupList,v)]*60)/1000
+        timeCounter = timeCounter + (voiceTimings[indexOfValue(lookupList,v)]*60)/1000
     end
   end -- end add speaker for loop
 

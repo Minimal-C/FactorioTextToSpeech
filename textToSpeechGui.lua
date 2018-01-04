@@ -35,16 +35,16 @@ end
 --
 -- @param player        The player who you wish to draw the gui for.
 -----------------------------------------------------------------------------
-local function create_main_gui(player)
+local function createMainGui(player)
 
   local root
   
-  if player.gui["top"].text_to_speech_gui_root then
-    root = player.gui["top"].text_to_speech_gui_root
+  if player.gui["top"].textToSpeechGuiRoot then
+    root = player.gui["top"].textToSpeechGuiRoot
     else
       root = player.gui["top"].add{
         type="frame",
-        name="text_to_speech_gui_root",
+        name="textToSpeechGuiRoot",
         direction="vertical",
         style="outer_frame"
       }
@@ -53,33 +53,33 @@ local function create_main_gui(player)
 
   root.add{
     type="sprite-button",
-    name="toggle_gui_button",
+    name="toggleGuiButton",
     sprite="text-to-speech-logo-sprite",
     style="icon_button"
   }
 
-  local main_frame = root.add{
+  local mainFrame = root.add{
     type="frame",
-    name="main_frame",
+    name="mainFrame",
     direction="vertical"
   }
 
-  main_frame.add{
+  mainFrame.add{
     type="label",
-    name="title_label",
+    name="titleLabel",
     caption="Text To Speech",
     style="frame_caption_label"
   }
 
-  local action_buttons = main_frame.add{
+  local actionButtons = mainFrame.add{
     type="flow",
-    name="action_buttons",
+    name="actionButtons",
     direction="horizontal"
   }
   
-  action_buttons.add{
+  actionButtons.add{
     type="textfield",
-    name="input_field",
+    name="inputField",
     text="",
     tooltip="Type input sentence here. You can create a custom word by writing a sequence of phonemes ".. 
     "(39 phonemes defined by CMU Pronouncing Dictionary, based on ARPAbet) each separated by a whitespace ".. 
@@ -87,83 +87,83 @@ local function create_main_gui(player)
     "sentence:\n\"Factorio is pretty neat.\"" 
   }
 
-  action_buttons.add{
+  actionButtons.add{
     type="sprite-button",
-    name="submit_button",
+    name="submitButton",
     sprite="text-to-speech-submit-sprite",
     tooltip="Click here with an empty blueprint to convert text to a speaker blueprint",
     style="slot_button"
   }
 
-  action_buttons.add{
+  actionButtons.add{
     type="sprite-button",
-    name="preview_button",
+    name="previewButton",
     sprite="text-to-speech-preview-sprite",
     tooltip="Preview (only audible to you)",
     style="slot_button"
   }
 
-  action_buttons.add{
+  actionButtons.add{
     type="sprite-button",
-    name="chat_button",
+    name="chatButton",
     sprite="text-to-speech-global-sprite",
     tooltip="Play message in chat (audible to all players)",
     style="slot_button"
   }
   
-  local settings_container = main_frame.add{
+  local settingsContainer = mainFrame.add{
     type="table",
-    name="settings_container",
+    name="settingsContainer",
     column_count=2
   }
 
-  settings_container.add{
+  settingsContainer.add{
     type="label",
-    name="voice_label",
+    name="voiceLabel",
     caption="Voice"
   }
 
-  settings_container.add{
+  settingsContainer.add{
     type="drop-down",
-    name="voice_dropdown",
+    name="voiceDropdown",
     items= getCompatibleVoiceList(),
     selected_index = 1
   }
 
-    settings_container.add{
+    settingsContainer.add{
     type="label",
-    name="global_playback_label",
+    name="globalPlaybackLabel",
     caption="Global Playback"
   }
 
-  settings_container.add{
+  settingsContainer.add{
     type="checkbox",
-    name="global_playback_checkbox",
+    name="globalPlaybackCheckbox",
     state=true
   }
 
-  settings_container.add{
+  settingsContainer.add{
     type="label",
-    name="block_width_label",
+    name="blockWidthLabel",
     caption="Blueprint Width"
   }
 
-  settings_container.add{
+  settingsContainer.add{
     type="textfield",
-    name="block_width_field",
+    name="blockWidthField",
     text="16",
     style="number_textfield"
   }
 
-  settings_container.add{
+  settingsContainer.add{
     type="label",
-    name="time_between_words_label",
+    name="timeBetweenWordsLabel",
     caption="Pause Length (ticks)"
   }
 
-  settings_container.add{
+  settingsContainer.add{
     type="textfield",
-    name="time_between_words_field",
+    name="timeBetweenWordsField",
     text="15",
     style="number_textfield"
   }
@@ -175,15 +175,15 @@ end
 --
 -- @param player        The player who you wish to draw the gui for.
 -----------------------------------------------------------------------------
-local function create_hidden_gui(player)
+local function createHiddenGui(player)
   local root
 
-  if player.gui["top"].text_to_speech_gui_root then
-    root = player.gui["top"].text_to_speech_gui_root
+  if player.gui["top"].textToSpeechGuiRoot then
+    root = player.gui["top"].textToSpeechGuiRoot
     else
       root = player.gui["top"].add{
         type="frame",
-        name="text_to_speech_gui_root",
+        name="textToSpeechGuiRoot",
         direction="vertical",
         style="outer_frame"
       }
@@ -191,7 +191,7 @@ local function create_hidden_gui(player)
 
   root.add{
     type="sprite-button",
-    name="toggle_gui_button",
+    name="toggleGuiButton",
     sprite="text-to-speech-logo-sprite",
     style="icon_button"
   }
@@ -202,17 +202,17 @@ end
 --
 -- @param player        The player who you wish to draw the gui for.
 -----------------------------------------------------------------------------
-local function toggle_gui(player)
+local function toggleGui(player)
   
   -- if root has exactly one child (the hide button), create main gui
-  if (#player.gui["top"].text_to_speech_gui_root.children == 1) then
+  if (#player.gui["top"].textToSpeechGuiRoot.children == 1) then
     --show gui
-      player.gui["top"].text_to_speech_gui_root.clear()
-      create_main_gui(player)
+      player.gui["top"].textToSpeechGuiRoot.clear()
+      createMainGui(player)
     else
       -- hide gui
-      player.gui["top"].text_to_speech_gui_root.clear()
-      create_hidden_gui(player)
+      player.gui["top"].textToSpeechGuiRoot.clear()
+      createHiddenGui(player)
   end
 end
 
@@ -224,37 +224,37 @@ end
 -- @param message     The error message to show
 -- @param player      The player who you wish to draw the gui for.
 -----------------------------------------------------------------------------
-local function show_error_gui(title, message, player)
+local function showErrorGui(title, message, player)
   
-  local root = player.gui["top"].text_to_speech_gui_root
+  local root = player.gui["top"].textToSpeechGuiRoot
 
-  if not root.main_frame.error_frame then
-    root.main_frame.add{
+  if not root.mainFrame.errorFrame then
+    root.mainFrame.add{
       type="frame",
-      name="error_frame",
+      name="errorFrame",
       direction="vertical"
     }
   end
 
-  local errNum = #root.main_frame.error_frame.children/2
+  local errNum = #root.mainFrame.errorFrame.children/2
 
-  root.main_frame.error_frame.add{
+  root.mainFrame.errorFrame.add{
     type="label",
-    name="error_label" .. errNum,
+    name="errorLabel" .. errNum,
     caption=title,
     style="bold_red_label"
   }
 
-  root.main_frame.error_frame.add{
+  root.mainFrame.errorFrame.add{
     type="text-box",
-    name="error_textbox" .. errNum,
+    name="errorTextbox" .. errNum,
     text=message,
     style="notice_textbox"
   }
   -- doesn't work inside instantiation?
   -- get last child from error frame
-  root.main_frame.error_frame.children[#root.main_frame.error_frame.children].read_only = true
-  root.main_frame.error_frame.children[#root.main_frame.error_frame.children].selectable = false
+  root.mainFrame.errorFrame.children[#root.mainFrame.errorFrame.children].read_only = true
+  root.mainFrame.errorFrame.children[#root.mainFrame.errorFrame.children].selectable = false
 end
 
 -----------------------------------------------------------------------------
@@ -267,64 +267,64 @@ end
 -----------------------------------------------------------------------------
 local function show_success_gui(title, message, player)
   
-  local root = player.gui["top"].text_to_speech_gui_root
+  local root = player.gui["top"].textToSpeechGuiRoot
 
-  if not root.main_frame.success_frame then
-    root.main_frame.add{
+  if not root.mainFrame.successFrame then
+    root.mainFrame.add{
       type="frame",
-      name="success_frame",
+      name="successFrame",
       direction="vertical"
     }
   end
 
-  root.main_frame.success_frame.add{
+  root.mainFrame.successFrame.add{
     type="label",
-    name="success_label",
+    name="successLabel",
     caption=title,
     style="bold_green_label"
   }
 
-  root.main_frame.success_frame.add{
+  root.mainFrame.successFrame.add{
     type="text-box",
-    name="success_textbox",
+    name="successTextbox",
     text=message,
     style="notice_textbox"
   }
   -- doesn't work inside instantiation?
   -- get last child from success frame, and do the thing
-  root.main_frame.success_frame.children[#root.main_frame.success_frame.children].read_only = true
-  root.main_frame.success_frame.children[#root.main_frame.success_frame.children].selectable = false
+  root.mainFrame.successFrame.children[#root.mainFrame.successFrame.children].read_only = true
+  root.mainFrame.successFrame.children[#root.mainFrame.successFrame.children].selectable = false
 end
 
-local function show_warning_gui(title, message, player)
+local function showWarningGui(title, message, player)
 
-  local root = player.gui["top"].text_to_speech_gui_root
+  local root = player.gui["top"].textToSpeechGuiRoot
 
-    if not root.main_frame.warning_frame then
-      root.main_frame.add{
+    if not root.mainFrame.warningFrame then
+      root.mainFrame.add{
         type="frame",
-        name="warning_frame",
+        name="warningFrame",
         direction="vertical"
       }
     end
 
-    root.main_frame.warning_frame.add{
+    root.mainFrame.warningFrame.add{
       type="label",
-      name="warning_label",
+      name="warningLabel",
       caption=title,
       style="menu_message"
     }
 
-    root.main_frame.warning_frame.add{
+    root.mainFrame.warningFrame.add{
       type="text-box",
-      name="warning_textbox",
+      name="warningTextbox",
       text=message,
       style="notice_textbox"
     }
     -- doesn't work inside instantiation?
     -- get last child from success frame, and do the thing
-    root.main_frame.warning_frame.children[#root.main_frame.warning_frame.children].read_only = true
-    root.main_frame.warning_frame.children[#root.main_frame.warning_frame.children].selectable = false
+    root.mainFrame.warningFrame.children[#root.mainFrame.warningFrame.children].read_only = true
+    root.mainFrame.warningFrame.children[#root.mainFrame.warningFrame.children].selectable = false
 
 end
 
@@ -356,7 +356,7 @@ end
 
 -----------------------------------------------------------------------------
 -- Formats a list of strings into one readable string and display it in an
--- error gui (show_error_gui).
+-- error gui (showErrorGui).
 --
 -- @param title                     The title to use for the frame
 -- @param unrecognisedThings        A table containing strings of unrecognised 
@@ -364,7 +364,7 @@ end
 -- @param player                    The player who you wish to draw the gui for.
 --                                  table of entities.
 -----------------------------------------------------------------------------
-local function show_unrecognised_things_error(title, unrecognisedThings, player)
+local function showUnrecognisedThingsError(title, unrecognisedThings, player)
   
   -- put unrecognised things table into a more readable string
   local outputStr = ""
@@ -381,7 +381,7 @@ local function show_unrecognised_things_error(title, unrecognisedThings, player)
   -- remove last ", " in string
   outputStr = outputStr:sub(1, -3)
 
-  show_error_gui(title, outputStr, player)
+  showErrorGui(title, outputStr, player)
 
 end
 
@@ -398,12 +398,12 @@ local function setupDataForIngameSpeechOutput(entities, isSpeechGlobal, player, 
   global = {}
 
   global.playSpeechGlobal = isSpeechGlobal
-  global.is_speaking = true
+  global.isSpeaking = true
   global.speechOwner = player
   global.voiceName = voiceName
 
   global.times = {}
-  global.note_ids = {}
+  global.noteIds = {}
   global.speechCounter = 3
   global.numSounds = #entities
 
@@ -414,7 +414,7 @@ local function setupDataForIngameSpeechOutput(entities, isSpeechGlobal, player, 
     global.times[i] = entities[i]["control_behavior"]["circuit_condition"]["constant"]
     
     -- add one to note id because it is indexed from 0
-    global.note_ids[i] = entities[i]["control_behavior"]["circuit_parameters"]["note_id"] + 1
+    global.noteIds[i] = entities[i]["control_behavior"]["circuit_parameters"]["note_id"] + 1
 
   end
 
@@ -431,11 +431,11 @@ local function evaluate_errors(err, player)
   
     -- if has unrecognised phonemes show error
     if #unrecognisedPhonemes>0 then
-      show_unrecognised_things_error("Error - Unrecognised Phonemes",unrecognisedPhonemes, player)
+      showUnrecognisedThingsError("Error - Unrecognised Phonemes",unrecognisedPhonemes, player)
     end
     -- if has unrecognised words show error
     if #unrecognisedWords>0 then
-      show_unrecognised_things_error("Error - Unrecognised Words",unrecognisedWords, player)
+      showUnrecognisedThingsError("Error - Unrecognised Words",unrecognisedWords, player)
     end
   
     -- if has any parameter errors show them
@@ -444,7 +444,7 @@ local function evaluate_errors(err, player)
       for _,info in pairs(parameterErrors) do
         local title = info[1]
         local message = info[2]
-        show_error_gui(title, message, player)
+        showErrorGui(title, message, player)
       end
   
     end
@@ -458,36 +458,36 @@ local function evaluate_errors(err, player)
 -- @param player        The player who made the tts request
 -- @param mode          Integer specifying what we want to do [1=set entities to cusor blueprint] [2=preview speech] [3=global chat play speech]
 -----------------------------------------------------------------------------
-local function generate_blueprint_entities(player, mode)
+local function performSpeechTask(player, mode)
 
   -- TODO: this method does too much, should be refactored
 
-  local root = player.gui["top"].text_to_speech_gui_root
+  local root = player.gui["top"].textToSpeechGuiRoot
   
-  local inputText = root.main_frame.action_buttons.input_field.text
-  local globalPlayback = root.main_frame.settings_container.global_playback_checkbox.state
-  local blockWidth = tonumber(root.main_frame.settings_container.block_width_field.text)
-  local pauseTime = tonumber(root.main_frame.settings_container.time_between_words_field.text)
-  local instrumentID = getDropDownVoiceInstrumentId( root.main_frame.settings_container.voice_dropdown.selected_index )
+  local inputText = root.mainFrame.actionButtons.inputField.text
+  local globalPlayback = root.mainFrame.settingsContainer.globalPlaybackCheckbox.state
+  local blockWidth = tonumber(root.mainFrame.settingsContainer.blockWidthField.text)
+  local pauseTime = tonumber(root.mainFrame.settingsContainer.timeBetweenWordsField.text)
+  local instrumentID = getDropDownVoiceInstrumentId( root.mainFrame.settingsContainer.voiceDropdown.selected_index )
   
   -- only take text after the period (e.g. programmable-speaker-instrument.voice1 -> voice1 )
-  local instrumentName = string.match(root.main_frame.settings_container.voice_dropdown.get_item(root.main_frame.settings_container.voice_dropdown.selected_index)[1], "[^.]+$")
+  local instrumentName = string.match(root.mainFrame.settingsContainer.voiceDropdown.get_item(root.mainFrame.settingsContainer.voiceDropdown.selected_index)[1], "[^.]+$")
 
   -- if the old error frame is up, remove it in preparation for new errors
-  if root.main_frame.error_frame then
-    root.main_frame.error_frame.destroy()
+  if root.mainFrame.errorFrame then
+    root.mainFrame.errorFrame.destroy()
   end
   -- same for the success frame
-  if root.main_frame.success_frame then
-    root.main_frame.success_frame.destroy()
+  if root.mainFrame.successFrame then
+    root.mainFrame.successFrame.destroy()
   end
   -- and the warning frame
-  if root.main_frame.warning_frame then
-    root.main_frame.warning_frame.destroy()
+  if root.mainFrame.warningFrame then
+    root.mainFrame.warningFrame.destroy()
   end
 
   if instrumentName == "voiceHL1" then
-    show_warning_gui("Warning - Small Vocabulary Available", "This voice has a small vocabulary, \nit's recommended to browse the available\nwords/phonemes before using. You may\ndo this by manually viewing the\navailable sound names for this voice\non a programmable speaker.\n\nThis voice works best when Pause Length\nis set to 0.",
+    showWarningGui("Warning - Small Vocabulary Available", "This voice has a small vocabulary, \nit's recommended to browse the available\nwords/phonemes before using. You may\ndo this by manually viewing the\navailable sound names for this voice\non a programmable speaker.\n\nThis voice works best when Pause Length\nis set to 0.",
       player)
   end
 
@@ -509,16 +509,17 @@ local function generate_blueprint_entities(player, mode)
     else
       -- if the player clicks the submit button with an empty cursor show error
       if not player.cursor_stack.valid_for_read then
-        show_error_gui("Error - Cannot Detect Blueprint", "You clicked with an empty cursor\n"..
+        showErrorGui("Error - Cannot Detect Blueprint", "You clicked with an empty cursor\n"..
           "Click the button with an empty blueprint on the cursor instead.", player)
         
         -- if the player clicks with something that isn't a blueprint show error
         -- done in nested if because attempt to read cursor_stack of empty cursor fails and does not return nil,
         elseif not (player.cursor_stack.name == "blueprint") then
-          show_error_gui("Error - Cannot Detect Blueprint", "You clicked with something that wasn't a blueprint.\n"..
+          showErrorGui("Error - Cannot Detect Blueprint", "You clicked with something that wasn't a blueprint.\n"..
             "Click the button with an empty blueprint on the cursor instead.", player)
       end
     end
+
   elseif mode == PREVIEW_MODE then
       
     if status then
@@ -548,7 +549,7 @@ function textToSpeechGui.mod_init()
   textToSpeech.init()
 
   for _, player in pairs(game.players) do
-    create_hidden_gui(player)
+    createHiddenGui(player)
   end
 
 end
@@ -568,7 +569,7 @@ function textToSpeechGui.new_player(event)
   
   local player = game.players[event.player_index]
   
-  create_hidden_gui(player)
+  createHiddenGui(player)
     
 end
 
@@ -581,7 +582,7 @@ function textToSpeechGui.mod_update(data)
         if data.mod_changes["Text-To-Speech"] then
           --reload and redraw
           for _, player in pairs(game.players) do
-            player.gui["top"].text_to_speech_gui_root.destroy()
+            player.gui["top"].textToSpeechGuiRoot.destroy()
           end
           textToSpeechGui.mod_init()
         end
@@ -595,20 +596,20 @@ function textToSpeechGui.on_gui_click(event)
   
   local player = game.players[event.player_index] 
 
-  if event.element.name == "submit_button" then
+  if event.element.name == "submitButton" then
     
-    generate_blueprint_entities(player, BLUEPRINT_MODE)
+    performSpeechTask(player, BLUEPRINT_MODE)
 
-    elseif event.element.name == "preview_button" then
+    elseif event.element.name == "previewButton" then
       
-      generate_blueprint_entities(player, PREVIEW_MODE)
+      performSpeechTask(player, PREVIEW_MODE)
 
-      elseif event.element.name == "chat_button" then
+      elseif event.element.name == "chatButton" then
 
-        generate_blueprint_entities(player, CHAT_MODE)
+        performSpeechTask(player, CHAT_MODE)
 
-        elseif event.element.name == "toggle_gui_button" then
-          toggle_gui(game.players[event.player_index])
+        elseif event.element.name == "toggleGuiButton" then
+          toggleGui(game.players[event.player_index])
   end
   
 end
@@ -618,7 +619,7 @@ end
 -----------------------------------------------------------------------------
 function textToSpeechGui.on_tick(event)
   
-  if global.is_speaking then
+  if global.isSpeaking then
 
     -- elapsed ticks since method play_entities was called, used for sound timing
     local elapsedTicks = game.tick-global.startTime
@@ -636,7 +637,7 @@ function textToSpeechGui.on_tick(event)
       -- create the soundPath for this speech sound, note it uses the entity mined sounds from the dummy entities created in control.lua
       local speechPath = "entity-mined/"
       speechPath = speechPath .. global.voiceName .. "-"
-      speechPath = speechPath .. string.lower(speechLUT[global.note_ids[global.speechCounter]])
+      speechPath = speechPath .. string.lower(speechLUT[global.noteIds[global.speechCounter]])
 
       if global.playSpeechGlobal then
         game.play_sound{path = speechPath}
@@ -646,7 +647,7 @@ function textToSpeechGui.on_tick(event)
 
       -- if we're done with the sentence
       if global.speechCounter == global.numSounds then
-        global.is_speaking = false
+        global.isSpeaking = false
       end
 
       global.speechCounter = global.speechCounter + 1
