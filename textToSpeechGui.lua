@@ -1,4 +1,4 @@
-local textToSpeech. = require "textToSpeech"
+local textToSpeech = require "textToSpeech"
 local voiceData = require "voiceData"
 
 if not textToSpeechGui then textToSpeechGui = {} end
@@ -9,7 +9,8 @@ PREVIEW_MODE = 2
 CHAT_MODE = 3
 
 -----------------------------------------------------------------------------
--- Gets a list of the names of tts compatible voices.
+-- Gets a list of the names of tts compatible voices, from speaker instrument
+-- data.
 --
 -- @return        A table containing the localized names of compatible voices
 -----------------------------------------------------------------------------
@@ -39,10 +40,10 @@ local function createMainGui(player)
 
   local root
   
-  if player.gui["top"].textToSpeechGuiRoot then
-    root = player.gui["top"].textToSpeechGuiRoot
+  if player.gui.top.textToSpeechGuiRoot then
+    root = player.gui.top.textToSpeechGuiRoot
     else
-      root = player.gui["top"].add{
+      root = player.gui.top.add{
         type="frame",
         name="textToSpeechGuiRoot",
         direction="vertical",
@@ -71,13 +72,13 @@ local function createMainGui(player)
     style="frame_caption_label"
   }
 
-  local actionButtons = mainFrame.add{
+  local inputRowFlow = mainFrame.add{
     type="flow",
-    name="actionButtons",
+    name="inputRowFlow",
     direction="horizontal"
   }
   
-  actionButtons.add{
+  inputRowFlow.add{
     type="textfield",
     name="inputField",
     text="",
@@ -87,50 +88,70 @@ local function createMainGui(player)
     "sentence:\n\"Factorio is pretty neat.\"" 
   }
 
-  actionButtons.add{
+  inputRowFlow.add{
     type="sprite-button",
     name="submitButton",
     sprite="text-to-speech-submit-sprite",
-    tooltip="Click here with an empty blueprint to convert text to a speaker blueprint",
-    style="slot_button"
+    tooltip="Generate blueprint from input text",
+    style="mod_gui_button"
   }
 
-  actionButtons.add{
+  inputRowFlow.add{
     type="sprite-button",
     name="previewButton",
     sprite="text-to-speech-preview-sprite",
     tooltip="Preview (only audible to you)",
-    style="slot_button"
+    style="mod_gui_button"
   }
 
-  actionButtons.add{
+  inputRowFlow.add{
     type="sprite-button",
     name="chatButton",
     sprite="text-to-speech-global-sprite",
     tooltip="Play message in chat (audible to all players)",
-    style="slot_button"
+    style="mod_gui_button"
   }
   
-  local settingsContainer = mainFrame.add{
-    type="table",
-    name="settingsContainer",
-    column_count=2
+  local voiceSelectRowFlow = mainFrame.add{
+    type="flow",
+    name="voiceSelectRowFlow",
+    direction="horizontal"
   }
 
-  settingsContainer.add{
+  voiceSelectRowFlow.add{
     type="label",
     name="voiceLabel",
     caption="Voice"
   }
 
-  settingsContainer.add{
+  voiceSelectRowFlow.add{
     type="drop-down",
     name="voiceDropdown",
     items= getCompatibleVoiceList(),
     selected_index = 1
   }
 
-    settingsContainer.add{
+  local settingsSubFrame = mainFrame.add{
+    type="frame",
+    name="settingsSubFrame",
+    direction="vertical",
+    style="inner_frame"
+  }
+
+  settingsSubFrame.add{
+    type="label",
+    name="bpSettingsLabel",
+    caption="Blueprint Settings",
+    style="frame_caption_label"
+  }
+
+  local settingsContainer = settingsSubFrame.add{
+    type="table",
+    name="settingsContainer",
+    column_count=2
+  }
+
+  settingsContainer.add{
     type="label",
     name="globalPlaybackLabel",
     caption="Global Playback"
@@ -178,10 +199,10 @@ end
 local function createHiddenGui(player)
   local root
 
-  if player.gui["top"].textToSpeechGuiRoot then
-    root = player.gui["top"].textToSpeechGuiRoot
+  if player.gui.top.textToSpeechGuiRoot then
+    root = player.gui.top.textToSpeechGuiRoot
     else
-      root = player.gui["top"].add{
+      root = player.gui.top.add{
         type="frame",
         name="textToSpeechGuiRoot",
         direction="vertical",
@@ -205,13 +226,13 @@ end
 local function toggleGui(player)
   
   -- if root has exactly one child (the hide button), create main gui
-  if (#player.gui["top"].textToSpeechGuiRoot.children == 1) then
+  if (#player.gui.top.textToSpeechGuiRoot.children == 1) then
     --show gui
-      player.gui["top"].textToSpeechGuiRoot.clear()
+      player.gui.top.textToSpeechGuiRoot.clear()
       createMainGui(player)
     else
       -- hide gui
-      player.gui["top"].textToSpeechGuiRoot.clear()
+      player.gui.top.textToSpeechGuiRoot.clear()
       createHiddenGui(player)
   end
 end
@@ -226,7 +247,7 @@ end
 -----------------------------------------------------------------------------
 local function showErrorGui(title, message, player)
   
-  local root = player.gui["top"].textToSpeechGuiRoot
+  local root = player.gui.top.textToSpeechGuiRoot
 
   if not root.mainFrame.errorFrame then
     root.mainFrame.add{
@@ -267,7 +288,7 @@ end
 -----------------------------------------------------------------------------
 local function show_success_gui(title, message, player)
   
-  local root = player.gui["top"].textToSpeechGuiRoot
+  local root = player.gui.top.textToSpeechGuiRoot
 
   if not root.mainFrame.successFrame then
     root.mainFrame.add{
@@ -298,7 +319,7 @@ end
 
 local function showWarningGui(title, message, player)
 
-  local root = player.gui["top"].textToSpeechGuiRoot
+  local root = player.gui.top.textToSpeechGuiRoot
 
     if not root.mainFrame.warningFrame then
       root.mainFrame.add{
@@ -431,11 +452,11 @@ local function evaluate_errors(err, player)
   
     -- if has unrecognised phonemes show error
     if #unrecognisedPhonemes>0 then
-      showUnrecognisedThingsError("Error - Unrecognised Phonemes",unrecognisedPhonemes, player)
+      showUnrecognisedThingsError("Error - Unrecognised Phoneme(s)",unrecognisedPhonemes, player)
     end
     -- if has unrecognised words show error
     if #unrecognisedWords>0 then
-      showUnrecognisedThingsError("Error - Unrecognised Words",unrecognisedWords, player)
+      showUnrecognisedThingsError("Error - Unrecognised Word(s)",unrecognisedWords, player)
     end
   
     -- if has any parameter errors show them
@@ -462,16 +483,17 @@ local function performSpeechTask(player, mode)
 
   -- TODO: this method does too much, should be refactored
 
-  local root = player.gui["top"].textToSpeechGuiRoot
-  
-  local inputText = root.mainFrame.actionButtons.inputField.text
-  local globalPlayback = root.mainFrame.settingsContainer.globalPlaybackCheckbox.state
-  local blockWidth = tonumber(root.mainFrame.settingsContainer.blockWidthField.text)
-  local pauseTime = tonumber(root.mainFrame.settingsContainer.timeBetweenWordsField.text)
-  local instrumentID = getDropDownVoiceInstrumentId( root.mainFrame.settingsContainer.voiceDropdown.selected_index )
+  local root = player.gui.top.textToSpeechGuiRoot
+  local bpSettingsFrame = root.mainFrame.settingsSubFrame
+
+  local inputText = root.mainFrame.inputRowFlow.inputField.text
+  local globalPlayback = bpSettingsFrame.settingsContainer.globalPlaybackCheckbox.state
+  local blockWidth = tonumber(bpSettingsFrame.settingsContainer.blockWidthField.text)
+  local pauseTime = tonumber(bpSettingsFrame.settingsContainer.timeBetweenWordsField.text)
+  local instrumentID = getDropDownVoiceInstrumentId(root.mainFrame.voiceSelectRowFlow.voiceDropdown.selected_index)
   
   -- only take text after the period (e.g. programmable-speaker-instrument.voice1 -> voice1 )
-  local instrumentName = string.match(root.mainFrame.settingsContainer.voiceDropdown.get_item(root.mainFrame.settingsContainer.voiceDropdown.selected_index)[1], "[^.]+$")
+  local instrumentName = string.match(root.mainFrame.voiceSelectRowFlow.voiceDropdown.get_item(root.mainFrame.voiceSelectRowFlow.voiceDropdown.selected_index)[1], "[^.]+$")
 
   -- if the old error frame is up, remove it in preparation for new errors
   if root.mainFrame.errorFrame then
@@ -486,11 +508,6 @@ local function performSpeechTask(player, mode)
     root.mainFrame.warningFrame.destroy()
   end
 
-  if instrumentName == "voiceHL1" then
-    showWarningGui("Warning - Small Vocabulary Available", "This voice has a small vocabulary, \nit's recommended to browse the available\nwords/phonemes before using. You may\ndo this by manually viewing the\navailable sound names for this voice\non a programmable speaker.\n\nThis voice works best when Pause Length\nis set to 0.",
-      player)
-  end
-
   -- attempt to convert text to speech
   local status, err, entities = pcall(textToSpeech.convertText,
       inputText,
@@ -503,20 +520,13 @@ local function performSpeechTask(player, mode)
 
   if mode == BLUEPRINT_MODE then
 
-    if (status) and (player.cursor_stack.valid_for_read) and (player.cursor_stack.name == "blueprint") then
+    if ((status) and not (player.cursor_stack.valid_for_read)) then
       show_success_gui("Success!", "The sentence has been added to your blueprint.", player)
+      player.cursor_stack.set_stack{name="blueprint", count = 1}
       player.cursor_stack.set_blueprint_entities(entities)
     else
-      -- if the player clicks the submit button with an empty cursor show error
-      if not player.cursor_stack.valid_for_read then
-        showErrorGui("Error - Cannot Detect Blueprint", "You clicked with an empty cursor\n"..
-          "Click the button with an empty blueprint on the cursor instead.", player)
-        
-        -- if the player clicks with something that isn't a blueprint show error
-        -- done in nested if because attempt to read cursor_stack of empty cursor fails and does not return nil,
-        elseif not (player.cursor_stack.name == "blueprint") then
-          showErrorGui("Error - Cannot Detect Blueprint", "You clicked with something that wasn't a blueprint.\n"..
-            "Click the button with an empty blueprint on the cursor instead.", player)
+      if (player.cursor_stack.valid_for_read) then
+        showErrorGui("Error - Item In Cursor", "You clicked with something in your cursor,\ncannot add a new blueprint to your cursor.", player)
       end
     end
 
@@ -575,14 +585,14 @@ end
 
 -----------------------------------------------------------------------------
 -- Should the mod be updated this function will be called to redraw the gui,
--- and reload stuff. (much here is unnecessary, but better safe than sorry?)
+-- and reload stuff
 -----------------------------------------------------------------------------
 function textToSpeechGui.mod_update(data)
   if data.mod_changes then
         if data.mod_changes["Text-To-Speech"] then
           --reload and redraw
           for _, player in pairs(game.players) do
-            player.gui["top"].textToSpeechGuiRoot.destroy()
+            player.gui.top.textToSpeechGuiRoot.destroy()
           end
           textToSpeechGui.mod_init()
         end

@@ -278,7 +278,7 @@ function textToSpeech.convertText(text, globalPlayback, entityBlockLength, timeB
     voiceWords = voiceData.hl1Data.wordTable
     voiceTimings = voiceData.hl1Data.timings
   else
-    voiceWords = voiceData.cmuData.cmuTable
+    voiceWords = voiceData.phonemesList
     voiceTimings = voiceData.cmuData.timings
   end
 
@@ -378,7 +378,7 @@ function textToSpeech.convertText(text, globalPlayback, entityBlockLength, timeB
 
   local entities = {}
   local timeCounter = 1
-
+  
   -- go through each phoneme and work out total time
   for k,v in pairs(phonemesTable) do
   
