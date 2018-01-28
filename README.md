@@ -20,12 +20,6 @@ The text to speech mod converts input text to a blueprint which uses custom spea
 - (Old but relevant-pre v0.1.0): https://www.youtube.com/watch?v=6RPOTj4Ysrg
 - (Old but relevant-pre v0.1.0): https://www.youtube.com/watch?v=Y875JPsUVJg
 
-# How to use blueprints
-1. Input text
-2. With an empty blueprint on your cursor, click on the blueprint icon
-3. Place blueprint
-4. Activate the constant combinator (red box)
-
 # How to synthesize custom words (Excluding HL1 VOX)
 You can create a custom word by writing a sequence of phonemes (39 phonemes defined by CMU Pronouncing Dictionary) each separated by a whitespace and encapsulated with square brackets, e.g. "[F AE K T AO R IY OW] is pretty neat" would pronounce the sentence: "Factorio is pretty neat".
 
