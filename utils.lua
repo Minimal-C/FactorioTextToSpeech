@@ -129,8 +129,8 @@ function arrangeEntities(numEntities, entitySize, arrangementWidth)
       x = x-entitySize["x"]
     end
     
-    if x > arrangementWidth then
-      x=10
+    if x >= arrangementWidth then
+      x=arrangementWidth-1
       y = y+entitySize["y"]
       direction = rightToLeft
     elseif x < 0 then
