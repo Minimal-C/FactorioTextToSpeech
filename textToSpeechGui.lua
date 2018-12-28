@@ -2,7 +2,6 @@ local textToSpeech = require "textToSpeech"
 local voiceData = require "voiceData"
 
 if not textToSpeechGui then textToSpeechGui = {} end
-
 -- const values for different speech modes
 BLUEPRINT_MODE = 1
 PREVIEW_MODE = 2
@@ -82,10 +81,7 @@ local function createMainGui(player)
     type="textfield",
     name="inputField",
     text="",
-    tooltip="Type input sentence here. You can create a custom word by writing a sequence of phonemes ".. 
-    "(39 phonemes defined by CMU Pronouncing Dictionary, based on ARPAbet) each separated by a whitespace ".. 
-    "and encapsulated with square brackets, e.g.\n\"[F AE K T AO R IY OW] is pretty neat\" \n would pronounce the ".. 
-    "sentence:\n\"Factorio is pretty neat.\"" 
+    tooltip="Type input sentence here." 
   }
 
   inputRowFlow.add{
@@ -177,16 +173,12 @@ local function createMainGui(player)
   }
 
   settingsContainer.add{
-    type="label",
-    name="timeBetweenWordsLabel",
-    caption="Pause Length (ticks)"
-  }
-
-  settingsContainer.add{
-    type="textfield",
-    name="timeBetweenWordsField",
-    text="15",
-    style="number_textfield"
+    type="button",
+    name="helpButton",
+    sprite="text-to-speech-submit-sprite",
+    tooltip="Click for info",
+    caption="Help",
+    style="mod_gui_button"
   }
 
 end
@@ -406,6 +398,20 @@ local function showUnrecognisedThingsError(title, unrecognisedThings, player)
 
 end
 
+local function toggleHelpInformation(player)
+  local root = player.gui.top.textToSpeechGuiRoot
+  local bpSettingsFrame = root.mainFrame.settingsSubFrame
+  if bpSettingsFrame["infoTextBox"] then
+    bpSettingsFrame["infoTextBox"].destroy()
+  else
+    bpSettingsFrame.add{
+      type="text-box",
+      name="infoTextBox",
+      text="You can create a custom word by writing\na sequence of phonemes (39 phonemes defined\nby CMU Pronouncing Dictionary, based on\nARPAbet) each separated by a whitespace \nand encapsulated with square brackets, e.g.\n\"[F AE K T AO R IY OW] is pretty neat\" \n would pronounce the sentence:\n\"Factorio is pretty neat.\"\nCMU Phonemes are \nAA, AE, AH, AO, AW, AY, B, CH, D, DH, EH,\nER, EY, F, G, HH, IH, IY, JH, K, L, M, N,\nNG, OW, OY, P, R, S, SH, T, TH, UH, UW, V,\nW, Y, Z, ZH\nBoth CMU and HL1 recognised words are\nstored in voiceData.lua if you wish to peruse\nthem (editor with large file support\nrecommended, like Visual Code)",
+      style="notice_textbox"
+    }
+  end
+end
 
 -----------------------------------------------------------------------------
 -- Set a sentence to be played (see onTick), takes entities from the text to
@@ -446,14 +452,8 @@ end
 
 local function evaluate_errors(err, player)
   
-    local unrecognisedPhonemes = err[1]
-    local unrecognisedWords = err[2]
-    local parameterErrors = err[3]
-  
-    -- if has unrecognised phonemes show error
-    if #unrecognisedPhonemes>0 then
-      showUnrecognisedThingsError("Error - Unrecognised Phoneme(s)",unrecognisedPhonemes, player)
-    end
+    local unrecognisedWords = err[1]
+    local parameterErrors = err[2]
     -- if has unrecognised words show error
     if #unrecognisedWords>0 then
       showUnrecognisedThingsError("Error - Unrecognised Word(s)",unrecognisedWords, player)
@@ -481,15 +481,12 @@ local function evaluate_errors(err, player)
 -----------------------------------------------------------------------------
 local function performSpeechTask(player, mode)
 
-  -- TODO: this method does too much, should be refactored
-
   local root = player.gui.top.textToSpeechGuiRoot
   local bpSettingsFrame = root.mainFrame.settingsSubFrame
 
   local inputText = root.mainFrame.inputRowFlow.inputField.text
   local globalPlayback = bpSettingsFrame.settingsContainer.globalPlaybackCheckbox.state
   local blockWidth = tonumber(bpSettingsFrame.settingsContainer.blockWidthField.text)
-  local pauseTime = tonumber(bpSettingsFrame.settingsContainer.timeBetweenWordsField.text)
   local instrumentID = getDropDownVoiceInstrumentId(root.mainFrame.voiceSelectRowFlow.voiceDropdown.selected_index)
   
   -- only take text after the period (e.g. programmable-speaker-instrument.voice1 -> voice1 )
@@ -507,46 +504,33 @@ local function performSpeechTask(player, mode)
   if root.mainFrame.warningFrame then
     root.mainFrame.warningFrame.destroy()
   end
-
-  -- attempt to convert text to speech
-  local status, err, entities = pcall(textToSpeech.convertText,
-      inputText,
-      globalPlayback,
-      blockWidth,
-      pauseTime,
-      instrumentID,
-      instrumentName
-    )
-
-  if mode == BLUEPRINT_MODE then
-
-    if ((status) and not (player.cursor_stack.valid_for_read)) then
-      show_success_gui("Success!", "The sentence has been added to your blueprint.", player)
-      player.cursor_stack.set_stack{name="blueprint", count = 1}
-      player.cursor_stack.set_blueprint_entities(entities)
-    else
-      if (player.cursor_stack.valid_for_read) then
-        showErrorGui("Error - Item In Cursor", "You clicked with something in your cursor,\ncannot add a new blueprint to your cursor.", player)
+  local voice
+  if instrumentName == "voiceHL1" then
+    voice = voiceData.hl1Data
+  else
+    voice = voiceData.cmuData
+  end
+  local status, err, entities = pcall(textToSpeech.convertTextToSpeakerEntities, inputText, voice, instrumentID, globalPlayback, blockWidth)
+  
+  if status then
+    if mode == BLUEPRINT_MODE then
+      if not (player.cursor_stack.valid_for_read) then
+        show_success_gui("Success!", "The sentence speakers have been added to your blueprint.", player)
+        player.cursor_stack.set_stack{name="blueprint", count = 1}
+        player.cursor_stack.set_blueprint_entities(entities)
+      elseif (player.cursor_stack.valid_for_read) then
+          showErrorGui("Error - Item In Cursor", "You clicked with something in your cursor,\ncannot add a new blueprint to your cursor.", player)
       end
-    end
-
-  elseif mode == PREVIEW_MODE then
-      
-    if status then
+    elseif mode == PREVIEW_MODE then
       setupDataForIngameSpeechOutput(entities, false, player, instrumentName)
-    end
-
-  elseif mode == CHAT_MODE then
-    
-    if status then
+    elseif mode == CHAT_MODE then
       setupDataForIngameSpeechOutput(entities, true, player, instrumentName)
       game.print("[TTS] "..player.name..": "..inputText)
     end
-
+  else -- if status==false
+    evaluate_errors(err, player)
   end
-
-  evaluate_errors(err, player)
-
+  
 end
 
 -----------------------------------------------------------------------------
@@ -556,7 +540,7 @@ end
 function textToSpeechGui.mod_init()
   
   -- load word definitions and sound timings
-  textToSpeech.init()
+  -- textToSpeech.init()
 
   for _, player in pairs(game.players) do
     createHiddenGui(player)
@@ -564,13 +548,13 @@ function textToSpeechGui.mod_init()
 
 end
 
------------------------------------------------------------------------------
--- On load the mod is initialized: initializes the textToSpeech module
------------------------------------------------------------------------------
-function textToSpeechGui.mod_on_load()
-  textToSpeech.init()
+-- -----------------------------------------------------------------------------
+-- -- On load the mod is initialized: initializes the textToSpeech module
+-- -----------------------------------------------------------------------------
+-- function textToSpeechGui.mod_on_load()
+--   textToSpeech.init()
 
-end
+-- end
 
 -----------------------------------------------------------------------------
 -- On new player joining, draw the gui for them.
@@ -619,7 +603,12 @@ function textToSpeechGui.on_gui_click(event)
         performSpeechTask(player, CHAT_MODE)
 
         elseif event.element.name == "toggleGuiButton" then
-          toggleGui(game.players[event.player_index])
+
+          toggleGui(player)
+          
+          elseif event.element.name == "helpButton" then
+
+            toggleHelpInformation(player)
   end
   
 end
@@ -640,9 +629,9 @@ function textToSpeechGui.on_tick(event)
       local speechLUT = {}
 
       if global.voiceName == "voiceHL1" then
-        speechLUT = voiceData.hl1Data.wordTable
+        speechLUT = voiceData.hl1Data.phonemesNames
       else
-        speechLUT = voiceData.phonemesList
+        speechLUT = voiceData.cmuData.phonemesNames
       end
       -- create the soundPath for this speech sound, note it uses the entity mined sounds from the dummy entities created in control.lua
       local speechPath = "entity-mined/"
