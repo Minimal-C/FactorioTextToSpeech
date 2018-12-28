@@ -81,10 +81,7 @@ local function createMainGui(player)
     type="textfield",
     name="inputField",
     text="",
-    tooltip="Type input sentence here. You can create a custom word by writing a sequence of phonemes ".. 
-    "(39 phonemes defined by CMU Pronouncing Dictionary, based on ARPAbet) each separated by a whitespace ".. 
-    "and encapsulated with square brackets, e.g.\n\"[F AE K T AO R IY OW] is pretty neat\" \n would pronounce the ".. 
-    "sentence:\n\"Factorio is pretty neat.\"" 
+    tooltip="Type input sentence here." 
   }
 
   inputRowFlow.add{
@@ -173,6 +170,15 @@ local function createMainGui(player)
     name="blockWidthField",
     text="16",
     style="number_textfield"
+  }
+
+  settingsContainer.add{
+    type="button",
+    name="helpButton",
+    sprite="text-to-speech-submit-sprite",
+    tooltip="Click for info",
+    caption="Help",
+    style="mod_gui_button"
   }
 
 end
@@ -392,6 +398,20 @@ local function showUnrecognisedThingsError(title, unrecognisedThings, player)
 
 end
 
+local function toggleHelpInformation(player)
+  local root = player.gui.top.textToSpeechGuiRoot
+  local bpSettingsFrame = root.mainFrame.settingsSubFrame
+  if bpSettingsFrame["infoTextBox"] then
+    bpSettingsFrame["infoTextBox"].destroy()
+  else
+    bpSettingsFrame.add{
+      type="text-box",
+      name="infoTextBox",
+      text="You can create a custom word by writing\na sequence of phonemes (39 phonemes defined\nby CMU Pronouncing Dictionary, based on\nARPAbet) each separated by a whitespace \nand encapsulated with square brackets, e.g.\n\"[F AE K T AO R IY OW] is pretty neat\" \n would pronounce the sentence:\n\"Factorio is pretty neat.\"\nCMU Phonemes are \nAA, AE, AH, AO, AW, AY, B, CH, D, DH, EH,\nER, EY, F, G, HH, IH, IY, JH, K, L, M, N,\nNG, OW, OY, P, R, S, SH, T, TH, UH, UW, V,\nW, Y, Z, ZH\nBoth CMU and HL1 recognised words are\nstored in voiceData.lua if you wish to peruse\nthem (editor with large file support\nrecommended, like Visual Code)",
+      style="notice_textbox"
+    }
+  end
+end
 
 -----------------------------------------------------------------------------
 -- Set a sentence to be played (see onTick), takes entities from the text to
@@ -583,7 +603,12 @@ function textToSpeechGui.on_gui_click(event)
         performSpeechTask(player, CHAT_MODE)
 
         elseif event.element.name == "toggleGuiButton" then
-          toggleGui(game.players[event.player_index])
+
+          toggleGui(player)
+          
+          elseif event.element.name == "helpButton" then
+
+            toggleHelpInformation(player)
   end
   
 end
