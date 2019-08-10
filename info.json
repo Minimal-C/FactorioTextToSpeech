@@ -1,10 +1,10 @@
 {
   "name": "Text-To-Speech",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "title": "Text To Speech",
   "author": "Minimal",
   "homepage":"https://github.com/Minimal-C/FactorioTextToSpeech/",
   "description": "In-game text to speech; preview, global chat and speaker blueprint generation modes.",
-  "factorio_version": "0.16",
+  "factorio_version": "0.17",
   "dependencies": []
 }

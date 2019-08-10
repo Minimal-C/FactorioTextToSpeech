@@ -68,7 +68,7 @@ local function createMainGui(player)
     type="label",
     name="titleLabel",
     caption="Text To Speech",
-    style="frame_caption_label"
+    style="large_caption_label"
   }
 
   local inputRowFlow = mainFrame.add{
@@ -138,7 +138,7 @@ local function createMainGui(player)
     type="label",
     name="bpSettingsLabel",
     caption="Blueprint Settings",
-    style="frame_caption_label"
+    style="subheader_caption_label"
   }
 
   local settingsContainer = settingsSubFrame.add{
@@ -169,7 +169,7 @@ local function createMainGui(player)
     type="textfield",
     name="blockWidthField",
     text="16",
-    style="number_textfield"
+    style="short_number_textfield"
   }
 
   settingsContainer.add{
